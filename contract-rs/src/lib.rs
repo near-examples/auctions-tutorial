@@ -1,6 +1,6 @@
 // Find all our documentation at https://docs.near.org
 use near_sdk::json_types::{U128, U64};
-use near_sdk::{env, log, near, AccountId, NearToken, PanicOnDefault, Promise};
+use near_sdk::{env, near, AccountId, NearToken, PanicOnDefault, Promise};
 
 #[near(serializers = [json])]
 pub struct OutputBid {
@@ -38,8 +38,6 @@ impl Contract {
     #[payable]
     pub fn bid(&mut self) -> Promise {
         // Assert the auction is still ongoing
-        log!("Current time: {}", env::block_timestamp());
-        log!("Auction end time: {}", self.auction_end_time);
         assert!(
             env::block_timestamp() < self.auction_end_time,
             "Auction has ended"
