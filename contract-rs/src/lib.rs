@@ -3,7 +3,7 @@ use near_sdk::json_types::{U128, U64};
 use near_sdk::{env, log, near, AccountId, NearToken, PanicOnDefault, Promise};
 
 #[near(serializers = [json])]
-pub struct OBid {
+pub struct OutputBid {
     pub bidder: AccountId,
     pub bid: U128,
 }
@@ -63,10 +63,10 @@ impl Contract {
         Promise::new(last_bidder).transfer(last_bid)
     }
 
-    pub fn get_highest_bid(&self) -> OBid {
+    pub fn get_highest_bid(&self) -> OutputBid {
         let bidder = self.highest_bid.bidder.clone();
         let bid = self.highest_bid.bid;
-        OBid {
+        OutputBid {
             bidder,
             bid: U128::from(bid.as_yoctonear()),
         }
