@@ -22,7 +22,7 @@ test.beforeEach(async (t) => {
   const contract = await root.createSubAccount("contract");
 
   // Deploy contract (input from package.json)
-  await contract.deploy('process.argv[2]');
+  await contract.deploy(process.argv[2]);
 
   // Initialize contract, finishes in 1 minute
   await contract.call(contract, "init", {

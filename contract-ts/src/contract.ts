@@ -6,7 +6,7 @@ class Bid {
   bid: bigint;
 }
 
-@NearBindgen({})
+@NearBindgen({ requireInit: true })
 class AuctionContract {
   highest_bid: Bid = { bidder: '', bid: BigInt(1) };
   auctionEndTime: bigint = BigInt(0);
