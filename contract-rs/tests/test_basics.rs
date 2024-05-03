@@ -1,5 +1,5 @@
 use chrono::Utc;
-use contract_rs::OBid;
+use contract_rs::OutputBid;
 use near_sdk::{json_types::U128, log, NearToken};
 use serde_json::json;
 
@@ -50,7 +50,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let highest_bid_json = contract.view("get_highest_bid").await?;
 
-    let highest_bid: OBid = highest_bid_json.json::<OBid>()?;
+    let highest_bid: OutputBid = highest_bid_json.json::<OutputBid>()?;
 
     assert_eq!(
         highest_bid.bid,
