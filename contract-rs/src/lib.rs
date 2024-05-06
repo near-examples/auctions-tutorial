@@ -1,14 +1,9 @@
 // Find all our documentation at https://docs.near.org
-use near_sdk::json_types::{U128, U64};
+use near_sdk::json_types::U64;
 use near_sdk::{env, near, AccountId, NearToken, PanicOnDefault, Promise};
 
-#[near(serializers = [json])]
-pub struct OutputBid {
-    pub bidder: AccountId,
-    pub bid: U128,
-}
-
-#[near(serializers = [borsh])]
+#[near(serializers = [json, borsh])]
+#[derive(Clone)]
 pub struct Bid {
     pub bidder: AccountId,
     pub bid: NearToken,
@@ -18,7 +13,7 @@ pub struct Bid {
 #[derive(PanicOnDefault)]
 pub struct Contract {
     highest_bid: Bid,
-    auction_end_time: u64,
+    auction_end_time: U64,
 }
 
 #[near]
@@ -31,7 +26,7 @@ impl Contract {
                 bidder: env::current_account_id(),
                 bid: NearToken::from_yoctonear(1),
             },
-            auction_end_time: u64::from(end_time),
+            auction_end_time: end_time,
         }
     }
 
@@ -39,7 +34,7 @@ impl Contract {
     pub fn bid(&mut self) -> Promise {
         // Assert the auction is still ongoing
         assert!(
-            env::block_timestamp() < self.auction_end_time,
+            env::block_timestamp() < self.auction_end_time.into(),
             "Auction has ended"
         );
 
@@ -48,8 +43,10 @@ impl Contract {
         let bidder = env::predecessor_account_id();
 
         // last bid
-        let last_bidder = self.highest_bid.bidder.clone();
-        let last_bid = self.highest_bid.bid;
+        let Bid {
+            bidder: last_bidder,
+            bid: last_bid,
+        } = self.highest_bid.clone();
 
         // Check if the deposit is higher than the current bid
         assert!(bid > last_bid, "You must place a higher bid");
@@ -61,17 +58,12 @@ impl Contract {
         Promise::new(last_bidder).transfer(last_bid)
     }
 
-    pub fn get_highest_bid(&self) -> OutputBid {
-        let bidder = self.highest_bid.bidder.clone();
-        let bid = self.highest_bid.bid;
-        OutputBid {
-            bidder,
-            bid: U128::from(bid.as_yoctonear()),
-        }
+    pub fn get_highest_bid(&self) -> Bid {
+        self.highest_bid.clone()
     }
 
     pub fn get_auction_end_time(&self) -> U64 {
-        U64::from(self.auction_end_time)
+        self.auction_end_time
     }
 }
 
@@ -89,7 +81,7 @@ mod tests {
 
         let default_bid = contract.get_highest_bid();
         assert_eq!(default_bid.bidder, env::current_account_id());
-        assert_eq!(default_bid.bid, 1.into());
+        assert_eq!(default_bid.bid, NearToken::from_yoctonear(1));
 
         let end_time = contract.get_auction_end_time();
         assert_eq!(end_time, U64::from(1000));

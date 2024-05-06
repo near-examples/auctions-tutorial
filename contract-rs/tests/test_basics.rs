@@ -1,6 +1,6 @@
 use chrono::Utc;
-use contract_rs::OutputBid;
-use near_sdk::{json_types::U128, log, NearToken};
+use contract_rs::Bid;
+use near_sdk::{log, NearToken};
 use serde_json::json;
 
 const FIVE_NEAR: NearToken = NearToken::from_near(5);
@@ -50,11 +50,11 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let highest_bid_json = contract.view("get_highest_bid").await?;
 
-    let highest_bid: OutputBid = highest_bid_json.json::<OutputBid>()?;
+    let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
 
     assert_eq!(
         highest_bid.bid,
-        U128::from(NearToken::from_near(1).as_yoctonear())
+        NearToken::from_near(1)
     );
     assert_eq!(highest_bid.bidder, *alice.id());
 
