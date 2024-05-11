@@ -19,6 +19,13 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         .await?
         .unwrap();
 
+    let auctioneer = root
+        .create_subaccount("auctioneer")
+        .initial_balance(FIVE_NEAR)
+        .transact()
+        .await?
+        .unwrap();
+
     let contract_account = root
         .create_subaccount("contract")
         .initial_balance(FIVE_NEAR)
@@ -34,7 +41,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let init = contract
         .call("init")
-        .args_json(json!({"end_time": a_minute_from_now.to_string()}))
+        .args_json(json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id() }))
         .transact()
         .await?;
 

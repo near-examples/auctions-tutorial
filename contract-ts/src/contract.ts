@@ -9,18 +9,21 @@ class Bid {
 @NearBindgen({ requireInit: true })
 class AuctionContract {
   highest_bid: Bid = { bidder: '', bid: BigInt(1) };
-  auctionEndTime: bigint = BigInt(0);
+  auction_end_time: bigint = BigInt(0);
+  auctioneer: string = "";
+  auction_was_claimed: boolean = false;
 
   @initialize({ privateFunction: true })
-  init({ end_time }: { end_time: bigint }) {
-    this.auctionEndTime = end_time;
+  init({ end_time, auctioneer }: { end_time: bigint, auctioneer: string }) {
+    this.auction_end_time = end_time;
     this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(1) };
+    this.auctioneer = auctioneer;
   }
 
   @call({ payableFunction: true })
   bid(): NearPromise {
     // Assert the auction is still ongoing
-    assert(this.auctionEndTime > near.blockTimestamp(), "Auction has ended");
+    assert(this.auction_end_time > near.blockTimestamp(), "Auction has ended");
 
     // Current bid
     const bid = near.attachedDeposit();
@@ -46,6 +49,15 @@ class AuctionContract {
 
   @view({})
   get_auction_end_time(): BigInt {
-    return this.auctionEndTime;
+    return this.auction_end_time;
+  }
+  @call({})
+  auction_end() {
+    assert(near.predecessorAccountId() == this.auctioneer, "Only auctioneer can end the auction");
+    assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
+    assert(!this.auction_was_claimed, "Auction has been claimed");
+
+    this.auction_was_claimed = true;
+    return NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid);
   }
 }

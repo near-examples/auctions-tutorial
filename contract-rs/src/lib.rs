@@ -14,19 +14,23 @@ pub struct Bid {
 pub struct Contract {
     highest_bid: Bid,
     auction_end_time: U64,
+    auctioneer: AccountId,
+    auction_was_claimed: bool,
 }
 
 #[near]
 impl Contract {
     #[init]
     #[private] // only callable by the contract's account
-    pub fn init(end_time: U64) -> Self {
+    pub fn init(end_time: U64,auctioneer: AccountId) -> Self {
         Self {
             highest_bid: Bid {
                 bidder: env::current_account_id(),
                 bid: NearToken::from_yoctonear(1),
             },
             auction_end_time: end_time,
+            auctioneer: auctioneer,
+            auction_was_claimed: false,
         }
     }
 
@@ -65,6 +69,15 @@ impl Contract {
     pub fn get_auction_end_time(&self) -> U64 {
         self.auction_end_time
     }
+
+    pub fn auction_end(&mut self) -> Promise {
+        assert!(env::predecessor_account_id() == self.auctioneer, "You must place a higher bid");
+        assert!(env::block_timestamp() < self.auction_end_time.into(), "Auction has not ended yet");
+        assert!(!self.auction_was_claimed, "Auction has been claimed");
+        self.auction_was_claimed = true;
+        let auctioneer = self.auctioneer.clone();
+        Promise::new(auctioneer).transfer(self.highest_bid.bid)
+    }
 }
 
 /*
@@ -77,7 +90,8 @@ mod tests {
 
     #[test]
     fn init_contract() {
-        let contract = Contract::init(U64::from(1000));
+        let auctioneer: AccountId = "auctioneer.testnet".parse().unwrap();
+        let contract = Contract::init(U64::from(1000), auctioneer);
 
         let default_bid = contract.get_highest_bid();
         assert_eq!(default_bid.bidder, env::current_account_id());

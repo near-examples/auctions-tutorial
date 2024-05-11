@@ -4,6 +4,7 @@
     "target": "ES5",
     "noEmit": true,
     "noImplicitAny": false,
+    "lib": ["esnext", "esnext.asynciterable"]
   },
   "files": [
     "sandbox-ts/main.ava.ts",
