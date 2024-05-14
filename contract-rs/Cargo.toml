@@ -19,7 +19,6 @@ near-sdk = { version = "5.1.0", features = ["legacy"] }
 near-sdk = { version = "5.1.0", features = ["unit-testing"] }
 near-workspaces = { version = "0.10.0", features = ["unstable"] }
 tokio = { version = "1.12.0", features = ["full"] }
-serde_json = "1"
 
 [profile.release]
 codegen-units = 1
