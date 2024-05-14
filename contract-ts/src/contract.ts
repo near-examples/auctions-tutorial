@@ -51,8 +51,9 @@ class AuctionContract {
   get_auction_end_time(): BigInt {
     return this.auction_end_time;
   }
+  
   @call({})
-  auction_end() {
+  claim() {
     assert(near.predecessorAccountId() == this.auctioneer, "Only auctioneer can end the auction");
     assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
     assert(!this.auction_was_claimed, "Auction has been claimed");

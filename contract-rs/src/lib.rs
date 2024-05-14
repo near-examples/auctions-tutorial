@@ -1,12 +1,14 @@
 // Find all our documentation at https://docs.near.org
+use near_sdk::{env, near, AccountId, Gas, NearToken, PanicOnDefault, Promise};
 use near_sdk::json_types::U64;
-use near_sdk::{env, near, AccountId, NearToken, PanicOnDefault, Promise};
+use near_sdk::json_types::U128;
+use near_sdk::serde_json::json;
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone)]
 pub struct Bid {
     pub bidder: AccountId,
-    pub bid: NearToken,
+    pub bid: U128,
 }
 
 #[near(contract_state)]
@@ -16,50 +18,29 @@ pub struct Contract {
     auction_end_time: U64,
     auctioneer: AccountId,
     auction_was_claimed: bool,
+    ft_account_id: AccountId,
 }
 
+const NO_DEPOSIT: NearToken = NearToken::from_near(0);
+// const CALL_GAS: Gas = Gas(5_000_000_000_000);
+// const CALL_GAS: Gas = Gas(5_000_000_000_000);
+const CALL_GAS: Gas = Gas::from_tgas(200); // 200 TGAS
 #[near]
 impl Contract {
+
     #[init]
     #[private] // only callable by the contract's account
-    pub fn init(end_time: U64,auctioneer: AccountId) -> Self {
+    pub fn init(end_time: U64,auctioneer: AccountId,ft_account_id: AccountId) -> Self {
         Self {
             highest_bid: Bid {
                 bidder: env::current_account_id(),
-                bid: NearToken::from_yoctonear(1),
+                bid: U128(0),
             },
             auction_end_time: end_time,
             auctioneer: auctioneer,
             auction_was_claimed: false,
+            ft_account_id:ft_account_id
         }
-    }
-
-    #[payable]
-    pub fn bid(&mut self) -> Promise {
-        // Assert the auction is still ongoing
-        assert!(
-            env::block_timestamp() < self.auction_end_time.into(),
-            "Auction has ended"
-        );
-
-        // current bid
-        let bid = env::attached_deposit();
-        let bidder = env::predecessor_account_id();
-
-        // last bid
-        let Bid {
-            bidder: last_bidder,
-            bid: last_bid,
-        } = self.highest_bid.clone();
-
-        // Check if the deposit is higher than the current bid
-        assert!(bid > last_bid, "You must place a higher bid");
-
-        // Update the highest bid
-        self.highest_bid = Bid { bidder, bid };
-
-        // Transfer tokens back to the last bidder
-        Promise::new(last_bidder).transfer(last_bid)
     }
 
     pub fn get_highest_bid(&self) -> Bid {
@@ -70,13 +51,54 @@ impl Contract {
         self.auction_end_time
     }
 
-    pub fn auction_end(&mut self) -> Promise {
-        assert!(env::predecessor_account_id() == self.auctioneer, "You must place a higher bid");
-        assert!(env::block_timestamp() < self.auction_end_time.into(), "Auction has not ended yet");
-        assert!(!self.auction_was_claimed, "Auction has been claimed");
-        self.auction_was_claimed = true;
-        let auctioneer = self.auctioneer.clone();
-        Promise::new(auctioneer).transfer(self.highest_bid.bid)
+    // pub fn auction_end(&mut self) -> Promise {
+    //     assert!(env::predecessor_account_id() == self.auctioneer, "You must place a higher bid");
+    //     assert!(env::block_timestamp() < self.auction_end_time.into(), "Auction has not ended yet");
+    //     assert!(!self.auction_was_claimed, "Auction has been claimed");
+    //     self.auction_was_claimed = true;
+    //     let auctioneer = self.auctioneer.clone();
+    //     Promise::new(auctioneer).transfer(self.highest_bid.bid)
+    // }
+
+    pub fn ft_on_transfer(
+        &mut self,
+        sender_id: AccountId,
+        amount: U128,
+        msg: String,
+      ) -> Promise {
+        
+        assert!(
+            env::block_timestamp() < self.auction_end_time.into(),
+            "Auction has ended"
+        );
+
+        let token_in = env::predecessor_account_id();
+        assert!(token_in == self.ft_account_id, "{}", "The token is not supported");
+
+        let Bid {
+            bidder: last_bidder,
+            bid: last_bid,
+        } = self.highest_bid.clone();
+
+        assert!(amount >= last_bid, "{}", "You must place a higher bid");
+    
+       
+
+        let args = json!({ "receiver_id": last_bidder, "amount":last_bid })
+                .to_string().into_bytes().to_vec();
+
+        let promise = Promise::new(self.ft_account_id.clone())
+        .function_call("ft_transfer".to_string(), args, NO_DEPOSIT, CALL_GAS)
+        .then(
+            Promise::new(env::current_account_id()).function_call("ft_transfer".to_string(), args, NO_DEPOSIT, CALL_GAS)
+        );
+
+        self.highest_bid = Bid { 
+            bidder:sender_id, 
+            bid:amount 
+        };
+        return  promise;
+  
     }
 }
 

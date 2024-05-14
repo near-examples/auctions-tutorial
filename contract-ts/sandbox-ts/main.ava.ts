@@ -116,6 +116,7 @@ test("Auction has been claimed", async (t) => {
 
   await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
   await bob.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("2 N").toString() });
+  
   // fast forward approx a minute
   await t.context.worker.provider.fastForward(60)
 
