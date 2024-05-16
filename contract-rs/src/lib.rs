@@ -1,6 +1,6 @@
 // Find all our documentation at https://docs.near.org
 use near_sdk::json_types::{U128, U64};
-use near_sdk::{env, near, require, AccountId, Gas, PanicOnDefault, Promise};
+use near_sdk::{env, log, near, require, AccountId, Gas, PanicOnDefault};
 
 pub mod ext;
 pub use crate::ext::*;
@@ -27,6 +27,8 @@ impl Contract {
     #[init]
     #[private] // only callable by the contract's account
     pub fn init(end_time: U64, auctioneer: AccountId, ft_contract: AccountId) -> Self {
+        log!(env::current_account_id());
+        log!(env::predecessor_account_id());
         Self {
             highest_bid: Bid {
                 bidder: env::current_account_id(),
@@ -56,41 +58,45 @@ impl Contract {
     //     Promise::new(auctioneer).transfer(self.highest_bid.bid)
     // }
 
-    pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> Promise {
-        assert!(
-            env::block_timestamp() < self.auction_end_time.into(),
-            "Auction has ended"
-        );
-
-        let ft = env::predecessor_account_id();
-        require!(ft == self.ft_contract, "The token is not supported");
-
-        let Bid {
-            bidder: last_bidder,
-            bid: last_bid,
-        } = self.highest_bid.clone();
-
-        require!(amount >= last_bid, "You must place a higher bid");
-
+    pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, _msg: String) -> U128 {
+        // require!(false, "The token is not supported");
         self.highest_bid = Bid {
             bidder: sender_id,
             bid: amount,
         };
+        // require!(
+        //     env::block_timestamp() < self.auction_end_time.into(),
+        //     "Auction has ended"
+        // );
 
-        ft_contract::ext(self.ft_contract.clone())
-            .with_static_gas(Gas::from_tgas(30))
-            .ft_transfer(last_bidder, last_bid)
-            .then(
-                Self::ext(env::current_account_id())
-                    .with_static_gas(Gas::from_tgas(30))
-                    .ft_transfer_callback(),
-            )
+        // let ft = env::predecessor_account_id();
+        // require!(ft == self.ft_contract, "The token is not supported");
+
+        // let Bid {
+        //     bidder: last_bidder,
+        //     bid: last_bid,
+        // } = self.highest_bid.clone();
+
+        // self.highest_bid = Bid {
+        //     bidder: sender_id,
+        //     bid: amount,
+        // };
+
+        // require!(amount >= last_bid, "You must place a higher bid");
+
+        
+
+        // if amount >= last_bid{
+        //     ft_contract::ext(self.ft_contract.clone())
+        //     .with_static_gas(Gas::from_tgas(300))
+        //     .ft_transfer(last_bidder, last_bid);
+        // }
+        
+       
+        
+        amount
     }
 
-    #[private]
-    pub fn ft_transfer_callback(&mut self) -> U128 {
-        U128::from(123)
-    }
 }
 
 /*
