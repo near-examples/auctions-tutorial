@@ -58,43 +58,38 @@ impl Contract {
     //     Promise::new(auctioneer).transfer(self.highest_bid.bid)
     // }
 
-    pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, _msg: String) -> U128 {
-        // require!(false, "The token is not supported");
+    // user -> FT -> nosotros -> devolvemos cuanto FT hay que dar de vuelta al usuario
+    // user -> 50 FT -> nosotros -> te depositaron 50FT -> 50FT -> ah, le tengo que dar
+    // de vuelta a user 50FT
+
+    pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
+        require!(
+            env::block_timestamp() < self.auction_end_time.into(),
+            "Auction has ended"
+        );
+
+        let ft = env::predecessor_account_id();
+        require!(ft == self.ft_contract, "The token is not supported");
+
+        let Bid {
+            bidder: last_bidder,
+            bid: last_bid,
+        } = self.highest_bid.clone();
+
+        require!(amount >= last_bid, "You must place a higher bid");
+
         self.highest_bid = Bid {
             bidder: sender_id,
             bid: amount,
         };
-        // require!(
-        //     env::block_timestamp() < self.auction_end_time.into(),
-        //     "Auction has ended"
-        // );
 
-        // let ft = env::predecessor_account_id();
-        // require!(ft == self.ft_contract, "The token is not supported");
-
-        // let Bid {
-        //     bidder: last_bidder,
-        //     bid: last_bid,
-        // } = self.highest_bid.clone();
-
-        // self.highest_bid = Bid {
-        //     bidder: sender_id,
-        //     bid: amount,
-        // };
-
-        // require!(amount >= last_bid, "You must place a higher bid");
-
+        if last_bid > U128(0) {
+            ft_contract::ext(self.ft_contract.clone())
+            .with_static_gas(Gas::from_tgas(300))
+            .ft_transfer(last_bidder, last_bid);
+        }
         
-
-        // if amount >= last_bid{
-        //     ft_contract::ext(self.ft_contract.clone())
-        //     .with_static_gas(Gas::from_tgas(300))
-        //     .ft_transfer(last_bidder, last_bid);
-        // }
-        
-       
-        
-        amount
+        U128(0)
     }
 
 }

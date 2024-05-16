@@ -158,7 +158,6 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         .transact()
         .await?;
 
-    println!("alice bid: {:#?}", alice_bid);    
     assert!(alice_bid.is_success());
 
     let highest_bid_json = contract.view("get_highest_bid").await?;
