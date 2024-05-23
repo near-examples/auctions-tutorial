@@ -10,9 +10,7 @@ const FIVE_NEAR: NearToken = NearToken::from_near(5);
 const FT_WASM_FILEPATH: &str = "./tests/fungible_token.wasm";
 
 #[tokio::test]
-// el subatador puede hacer apuesta
-// puedo reclamar si el monto es 0
-// puede la misma persona apostar dos veces
+
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
     let sandbox = near_workspaces::sandbox().await?;
     let contract_wasm = near_workspaces::compile_project("./").await?;
