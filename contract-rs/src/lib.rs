@@ -1,6 +1,6 @@
 // Find all our documentation at https://docs.near.org
 use near_sdk::json_types::{U128, U64};
-use near_sdk::{env, log, near, require, AccountId, Gas, PanicOnDefault};
+use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault};
 
 pub mod ext;
 pub use crate::ext::*;
@@ -27,8 +27,6 @@ impl Contract {
     #[init]
     #[private] // only callable by the contract's account
     pub fn init(end_time: U64, auctioneer: AccountId, ft_contract: AccountId) -> Self {
-        log!(env::current_account_id());
-        log!(env::predecessor_account_id());
         Self {
             highest_bid: Bid {
                 bidder: env::current_account_id(),
@@ -44,23 +42,19 @@ impl Contract {
     pub fn get_highest_bid(&self) -> Bid {
         self.highest_bid.clone()
     }
+    
+    pub fn claim(&mut self) {
+        assert!(env::predecessor_account_id() == self.auctioneer, "You are not the auctioneer");
+        assert!(env::block_timestamp() > self.auction_end_time.into(), "Auction has not ended yet");
+        assert!(!self.auction_was_claimed, "Auction has been claimed");
 
-    pub fn get_auction_end_time(&self) -> U64 {
-        self.auction_end_time
+        self.auction_was_claimed = true;
+        let auctioneer = self.auctioneer.clone();
+        ft_contract::ext(self.ft_contract.clone())
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .with_static_gas(Gas::from_tgas(1))
+            .ft_transfer(auctioneer, self.highest_bid.bid);
     }
-
-    // pub fn auction_end(&mut self) -> Promise {
-    //     assert!(env::predecessor_account_id() == self.auctioneer, "You must place a higher bid");
-    //     assert!(env::block_timestamp() < self.auction_end_time.into(), "Auction has not ended yet");
-    //     assert!(!self.auction_was_claimed, "Auction has been claimed");
-    //     self.auction_was_claimed = true;
-    //     let auctioneer = self.auctioneer.clone();
-    //     Promise::new(auctioneer).transfer(self.highest_bid.bid)
-    // }
-
-    // user -> FT -> nosotros -> devolvemos cuanto FT hay que dar de vuelta al usuario
-    // user -> 50 FT -> nosotros -> te depositaron 50FT -> 50FT -> ah, le tengo que dar
-    // de vuelta a user 50FT
 
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
         require!(
@@ -85,7 +79,8 @@ impl Contract {
 
         if last_bid > U128(0) {
             ft_contract::ext(self.ft_contract.clone())
-            .with_static_gas(Gas::from_tgas(300))
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .with_static_gas(Gas::from_tgas(10))
             .ft_transfer(last_bidder, last_bid);
         }
         

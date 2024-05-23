@@ -1,31 +1,26 @@
 use chrono::Utc;
-use near_sdk::Gas;
+use contract_rs:: Bid;
+use near_sdk::{AccountId, Gas};
 use near_sdk::{json_types::U128, log, NearToken};
+use near_workspaces::result::ExecutionFinalResult;
+use near_workspaces::{Account, Contract};
 use serde_json::json;
-use contract_rs::Bid;
 
-const FIVE_NEAR: NearToken = NearToken::from_near(50);
+const FIVE_NEAR: NearToken = NearToken::from_near(5);
 const FT_WASM_FILEPATH: &str = "./tests/fungible_token.wasm";
 
 #[tokio::test]
+// el subatador puede hacer apuesta
+// puedo reclamar si el monto es 0
+// puede la misma persona apostar dos veces
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
-    // let subscriber = tracing_subscriber::fmt()
-    // // Use a more compact, abbreviated log format
-    // .compact()
-    // // Display source code file paths
-    // .with_file(true)
-    // .with_line_number(true)
-    // .finish();
-    // // use that subscriber to process traces emitted after this point
-    // tracing::subscriber::set_global_default(subscriber)?;
-
     let sandbox = near_workspaces::sandbox().await?;
     let contract_wasm = near_workspaces::compile_project("./").await?;
 
     let ft_wasm = std::fs::read(FT_WASM_FILEPATH)?;
     let ft_contract = sandbox.dev_deploy(&ft_wasm).await?;
 
-    let root = sandbox.root_account()?;
+    let root: near_workspaces::Account = sandbox.root_account()?;
 
     // Initialize contracts
     let res = ft_contract
@@ -39,41 +34,24 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(res.is_success());
 
-    let alice = root
-        .create_subaccount("alice")
-        .initial_balance(FIVE_NEAR)
-        .transact()
-        .await?
-        .unwrap();
 
-    let bob = root
-        .create_subaccount("bob")
-        .initial_balance(FIVE_NEAR)
-        .transact()
-        .await?
-        .unwrap();
+    // Create subaccounts
+    let alice = create_subaccount(&root,"alice").await?;
 
-    let auctioneer = root
-        .create_subaccount("auctioneer")
-        .initial_balance(FIVE_NEAR)
-        .transact()
-        .await?
-        .unwrap();
+    let bob =create_subaccount(&root,"bob").await?;
 
-    let contract_account = root
-        .create_subaccount("contract")
-        .initial_balance(FIVE_NEAR)
-        .transact()
-        .await?
-        .unwrap();
+    let auctioneer = create_subaccount(&root,"auctioneer").await?;
 
+    let contract_account = create_subaccount(&root,"contract").await?;
+    
+    // Deploy and initialize contract
     let contract = contract_account.deploy(&contract_wasm).await?.unwrap();
 
     let now = Utc::now().timestamp();
-    let a_minute_from_now = (now + 60000) * 1000000000;
+    let a_minute_from_now = (now + 60) * 1000000000;
     log!("a_minute_from_now: {}", a_minute_from_now);
-
-    let init = contract
+ 
+    let init: ExecutionFinalResult = contract
         .call("init")
         .args_json(
             json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"ft_contract": ft_contract.id() }),
@@ -83,92 +61,186 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(init.is_success());
 
-    let alice_register = alice
-        .call(ft_contract.id(), "storage_deposit")
-        .args_json(serde_json::json!({
-            "account_id": alice.id()
-        }))
-        .deposit(NearToken::from_yoctonear(1250000000000000000000))
-        .transact()
-        .await?;
-
-    assert!(alice_register.is_success());
-
-    let bob_register = bob
-        .call(ft_contract.id(), "storage_deposit")
-        .args_json(serde_json::json!({
-            "account_id": bob.id()
-        }))
-        .deposit(NearToken::from_yoctonear(1250000000000000000000))
-        .transact()
-        .await?;
-
-    assert!(bob_register.is_success());
-
-    let contract_account_register = contract_account
-        .call(ft_contract.id(), "storage_deposit")
-        .args_json(serde_json::json!({
-            "account_id": contract_account.id()
-        }))
-        .deposit(NearToken::from_yoctonear(1250000000000000000000))
-        .transact()
-        .await?;
-
-    assert!(contract_account_register.is_success());
-
-    let auctioneer_register = auctioneer
-        .call(ft_contract.id(), "storage_deposit")
-        .args_json(serde_json::json!({
-            "account_id": auctioneer.id()
-        }))
-        .deposit(NearToken::from_yoctonear(1250000000000000000000))
-        .transact()
-        .await?;
-
-    assert!(auctioneer_register.is_success());
-
-    let transfer_amount = U128(100_000);
-    let root_transfer_alice = root.call(ft_contract.id(), "ft_transfer")
-        .args_json(serde_json::json!({
-            "receiver_id": alice.id(),
-            "amount": transfer_amount
-        }))
-        .deposit(NearToken::from_yoctonear(1))
-        .transact()
-        .await?;
+    // Register accounts
+    // number magic 8000000000000000000000
+    for account in [alice.clone(), bob.clone(), contract_account.clone(), auctioneer.clone()].iter() {
+        let register = account
+            .call(ft_contract.id(), "storage_deposit")
+            .args_json(serde_json::json!({ "account_id": account.id() }))
+            .deposit(NearToken::from_yoctonear(8000000000000000000000))
+            .transact()
+            .await?;
+        assert!(register.is_success());
+    }
+    
+    // Transfer tokens
+    let transfer_amount = U128(150_000);
+    
+    let root_transfer_alice = ft_transfer(&root,alice.clone(),ft_contract.clone(),transfer_amount).await?;
     assert!(root_transfer_alice.is_success());
 
-    let root_transfer_bob = root.call(ft_contract.id(), "ft_transfer")
-        .args_json(serde_json::json!({
-            "receiver_id": bob.id(),
-            "amount": transfer_amount
-        }))
-        .deposit(NearToken::from_yoctonear(1))
+    let alice_balance:U128 = ft_balance_of(&ft_contract,alice.id()).await?;
+    assert_eq!(alice_balance, U128(150_000));
+
+    
+    let root_transfer_bob = ft_transfer(&root,bob.clone(),ft_contract.clone(),transfer_amount).await?;
+    assert!(root_transfer_bob.is_success());
+
+    let bob_balance:U128 = ft_balance_of(&ft_contract,bob.id()).await?;
+    assert_eq!(bob_balance, U128(150_000));
+
+
+    // Alice makes frist bid
+    let alice_bid = ft_transfer_call(alice.clone(),ft_contract.id(),contract_account.id(),U128(50_000)).await?;
+    assert!(alice_bid.is_success());
+
+    let highest_bid_alice: Bid = contract.view("get_highest_bid").await?.json()?;
+    assert_eq!(highest_bid_alice.bid, U128(50_000));
+    assert_eq!(highest_bid_alice.bidder, *alice.id());
+
+    let contract_account_balance:U128 = ft_balance_of(&ft_contract,contract_account.id()).await?;
+    assert_eq!(contract_account_balance, U128(50_000));
+
+    let alice_balance_after_bid:U128 = ft_balance_of(&ft_contract,alice.id()).await?;
+    assert_eq!(alice_balance_after_bid, U128(100_000));
+
+
+    // Bob makes second bid
+    let bob_bid = ft_transfer_call(bob.clone(),ft_contract.id(),contract_account.id(),U128(60_000)).await?;
+    assert!(bob_bid.is_success());
+
+    let highest_bid: Bid = contract.view("get_highest_bid").await?.json()?;
+
+    assert_eq!(highest_bid.bid, U128(60_000));
+    assert_eq!(highest_bid.bidder, *bob.id());
+
+    let alice_balance_after_bid:U128 = ft_balance_of(&ft_contract,alice.id()).await?;
+    assert_eq!(alice_balance_after_bid, U128(150_000));
+    let bob_balance_after_bid:U128 = ft_balance_of(&ft_contract,bob.id()).await?;
+    assert_eq!(bob_balance_after_bid, U128(90_000));
+
+
+    // Alice makes the third bid but fails
+    let alice_bid: ExecutionFinalResult = ft_transfer_call(alice.clone(),ft_contract.id(),contract_account.id(),U128(50_000)).await?;
+    assert!(alice_bid.is_success());
+
+    let highest_bid_alice: Bid = contract.view("get_highest_bid").await?.json()?;
+    assert_eq!(highest_bid_alice.bid, U128(60_000));
+    assert_eq!(highest_bid_alice.bidder, *bob.id());
+
+    let contract_account_balance:U128 = ft_balance_of(&ft_contract,contract_account.id()).await?;
+    assert_eq!(contract_account_balance, U128(60_000));
+
+    let alice_balance_after_bid:U128 = ft_balance_of(&ft_contract,alice.id()).await?;
+    assert_eq!(alice_balance_after_bid, U128(150_000));
+    let bob_balance_after_bid:U128 = ft_balance_of(&ft_contract,bob.id()).await?;
+    assert_eq!(bob_balance_after_bid, U128(90_000));
+
+    // Alice makes the third bid
+    let alice_bid: ExecutionFinalResult = ft_transfer_call(alice.clone(),ft_contract.id(),contract_account.id(),U128(100_000)).await?;
+    assert!(alice_bid.is_success());
+
+    let highest_bid_alice: Bid = contract.view("get_highest_bid").await?.json()?;
+    assert_eq!(highest_bid_alice.bid, U128(100_000));
+    assert_eq!(highest_bid_alice.bidder, *alice.id());
+
+    let contract_account_balance:U128 = ft_balance_of(&ft_contract,contract_account.id()).await?;
+    assert_eq!(contract_account_balance, U128(100_000));
+
+    let alice_balance_after_bid:U128 = ft_balance_of(&ft_contract,alice.id()).await?;
+    assert_eq!(alice_balance_after_bid, U128(50_000));
+    let bob_balance_after_bid:U128 = ft_balance_of(&ft_contract,bob.id()).await?;
+    assert_eq!(bob_balance_after_bid, U128(150_000));
+
+    // Alicia claims the auction but fails
+    let alice_claim: ExecutionFinalResult = claim(alice.clone(),contract_account.id()).await?;
+    assert!(alice_claim.is_failure());
+
+    // Auctioneer claims auction but did not finish
+    let auctioneer_claim: ExecutionFinalResult = claim(auctioneer.clone(),contract_account.id()).await?;
+    assert!(auctioneer_claim.is_failure());
+    
+    // Fast forward
+    // ~0.3 seconds * 400 = 120 seconds = 2 minutes
+    let blocks_to_advance = 400;
+    sandbox.fast_forward(blocks_to_advance).await?;
+
+
+    // Bob makes a bid but it ends
+    // this cannot be tested
+    // let bob_bid = ft_transfer_call(bob.clone(),ft_contract.id(),contract_account.id(),U128(120_000)).await?;
+    // assert!(bob_bid.is_failure());
+
+    // Auctioneer claims auction 
+    let auctioneer_claim: ExecutionFinalResult = claim(auctioneer.clone(),contract_account.id()).await?;
+    assert!(auctioneer_claim.is_success());
+
+    let contract_account_balance:U128 = ft_balance_of(&ft_contract,contract_account.id()).await?;
+    assert_eq!(contract_account_balance, U128(0));
+
+    let auctioneer_balance_after_claim:U128 = ft_balance_of(&ft_contract,auctioneer.id()).await?;
+    assert_eq!(auctioneer_balance_after_claim, U128(100_000));
+
+    // Auctioneer claims auction back but fails
+    let auctioneer_claim: ExecutionFinalResult = claim(auctioneer.clone(),contract_account.id()).await?;
+    assert!(auctioneer_claim.is_failure());
+
+    Ok(())
+}
+
+async fn create_subaccount(root: &near_workspaces::Account, name: &str) -> Result<near_workspaces::Account, Box<dyn std::error::Error>> {
+    let subaccount = root
+        .create_subaccount(name)
+        .initial_balance(FIVE_NEAR)
         .transact()
-        .await?;
+        .await?
+        .unwrap();
 
-        assert!(root_transfer_bob.is_success());
+    Ok(subaccount)
+}
 
-    let alice_bid = alice
-        .call(ft_contract.id(), "ft_transfer_call")
+async fn ft_transfer(root: &near_workspaces::Account, account: Account,ft_contract:Contract,transfer_amount: U128)-> Result<ExecutionFinalResult, Box<dyn std::error::Error>>{
+    let transfer = root
+                .call(ft_contract.id(), "ft_transfer")
+                .args_json(serde_json::json!({
+                    "receiver_id": account.id(),
+                    "amount": transfer_amount
+                }))
+                .deposit(NearToken::from_yoctonear(1))
+                .transact()
+                .await?;
+    Ok(transfer)
+}
+
+
+async fn ft_balance_of(ft_contract: &Contract, account_id: &AccountId) -> Result<U128, Box<dyn std::error::Error>> {
+    let result = ft_contract.view("ft_balance_of")
+        .args_json(json!({"account_id": account_id})) // Aquí usamos el account_id pasado como argumento
+        .await?
+        .json()?;
+    
+    Ok(result)
+}
+
+async fn ft_transfer_call(account: Account,ft_contract_id: &AccountId,receiver_id: &AccountId, amount: U128)-> Result<ExecutionFinalResult, Box<dyn std::error::Error>>{
+    let transfer =account
+        .call(ft_contract_id, "ft_transfer_call")
         .args_json(serde_json::json!({
-            "receiver_id": contract_account.id(), "amount": U128(50_000), "msg": "0" }))
+            "receiver_id": receiver_id, "amount":amount, "msg": "0" }))
         .deposit(NearToken::from_yoctonear(1))
         .gas(Gas::from_tgas(300))
         .transact()
         .await?;
+    Ok(transfer)    
+}
 
-    assert!(alice_bid.is_success());
-
-    let highest_bid_json = contract.view("get_highest_bid").await?;
-
-    let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
-
-    assert_eq!(
-        highest_bid.bid,
-        U128(50_000)
-    );
-    assert_eq!(highest_bid.bidder, *alice.id());
-
-    Ok(())
+async fn claim(account: Account,contract_id: &AccountId)-> Result<ExecutionFinalResult, Box<dyn std::error::Error>>{
+    let claim: ExecutionFinalResult = account
+        .call(contract_id,"claim")
+        .args_json(
+            json!({}),
+        )
+        .transact()
+        .await?;
+    Ok(claim)    
 }
