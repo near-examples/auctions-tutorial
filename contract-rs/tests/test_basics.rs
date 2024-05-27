@@ -1,5 +1,5 @@
 use chrono::Utc;
-use contract_rs:: Bid;
+use contract_rs::{ Bid, TokenId};
 use near_sdk::{AccountId, Gas};
 use near_sdk::{json_types::U128, log, NearToken};
 use near_workspaces::result::ExecutionFinalResult;
@@ -18,6 +18,9 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let ft_wasm = std::fs::read(FT_WASM_FILEPATH)?;
     let ft_contract = sandbox.dev_deploy(&ft_wasm).await?;
 
+    let nft_wasm = near_workspaces::compile_project("./tests/nft-contract-royalty/.").await?;
+    let nft_contract = sandbox.dev_deploy(&nft_wasm).await?;
+
     let root: near_workspaces::Account = sandbox.root_account()?;
 
     // Initialize contracts
@@ -32,6 +35,13 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(res.is_success());
 
+    let res = nft_contract
+    .call("new_default_meta")
+    .args_json(serde_json::json!({"owner_id": root.id()}))
+    .transact()
+    .await?;
+    
+    assert!(res.is_success());
 
     // Create subaccounts
     let alice = create_subaccount(&root,"alice").await?;
@@ -41,6 +51,24 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let auctioneer = create_subaccount(&root,"auctioneer").await?;
 
     let contract_account = create_subaccount(&root,"contract").await?;
+
+    // Mint NFT 
+    let request_payload = json!({
+        "token_id": "1",
+        "receiver_id": contract_account.id(),
+        "metadata": {
+            "title": "LEEROYYYMMMJENKINSSS",
+            "description": "Alright time's up, let's do this.",
+            "media": "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.Fhp4lHufCdTzTeGCAblOdgHaF7%26pid%3DApi&f=1"
+        },
+    });
+
+    let res = contract_account.call(nft_contract.id(), "nft_mint")
+        .args_json(request_payload)
+        .deposit(NearToken::from_millinear(80))
+        .transact()
+        .await?;
+    assert!(res.is_success());
     
     // Deploy and initialize contract
     let contract = contract_account.deploy(&contract_wasm).await?.unwrap();
@@ -52,7 +80,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let init: ExecutionFinalResult = contract
         .call("init")
         .args_json(
-            json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"ft_contract": ft_contract.id() }),
+            json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"ft_contract": ft_contract.id(),"nft_contract":nft_contract.id(),"token_id":"1" }),
         )
         .transact()
         .await?;
@@ -170,7 +198,20 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     // assert!(bob_bid.is_failure());
 
     // Auctioneer claims auction 
+
+    let token_info: serde_json::Value = nft_contract
+    .call("nft_token")
+    .args_json(json!({"token_id": "1"}))
+    .transact()
+    .await?
+    .json()
+    .unwrap();
+    let owner_id: String = token_info["owner_id"].as_str().unwrap().to_string();
+       
+    assert_eq!(owner_id, contract.id().to_string(), "token owner is not first_buyer");
+
     let auctioneer_claim: ExecutionFinalResult = claim(auctioneer.clone(),contract_account.id()).await?;
+    println!("auctioneer_claim outcome: {:#?}", auctioneer_claim);
     assert!(auctioneer_claim.is_success());
 
     let contract_account_balance:U128 = ft_balance_of(&ft_contract,contract_account.id()).await?;
@@ -178,6 +219,17 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let auctioneer_balance_after_claim:U128 = ft_balance_of(&ft_contract,auctioneer.id()).await?;
     assert_eq!(auctioneer_balance_after_claim, U128(100_000));
+
+    let token_info: serde_json::Value = nft_contract
+    .call("nft_token")
+    .args_json(json!({"token_id": "1"}))
+    .transact()
+    .await?
+    .json()
+    .unwrap();
+    let owner_id: String = token_info["owner_id"].as_str().unwrap().to_string();
+       
+    assert_eq!(owner_id, alice.id().to_string(), "token owner is not first_buyer");
 
     // Auctioneer claims auction back but fails
     let auctioneer_claim: ExecutionFinalResult = claim(auctioneer.clone(),contract_account.id()).await?;
@@ -226,7 +278,7 @@ async fn ft_transfer_call(account: Account,ft_contract_id: &AccountId,receiver_i
         .args_json(serde_json::json!({
             "receiver_id": receiver_id, "amount":amount, "msg": "0" }))
         .deposit(NearToken::from_yoctonear(1))
-        .gas(Gas::from_tgas(300))
+        .gas(Gas::from_tgas(31))
         .transact()
         .await?;
     Ok(transfer)    

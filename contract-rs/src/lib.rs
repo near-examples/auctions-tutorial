@@ -12,6 +12,8 @@ pub struct Bid {
     pub bid: U128,
 }
 
+pub type TokenId = String;
+
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
 pub struct Contract {
@@ -20,13 +22,15 @@ pub struct Contract {
     auctioneer: AccountId,
     auction_was_claimed: bool,
     ft_contract: AccountId,
+    nft_contract: AccountId,
+    token_id:TokenId
 }
 
 #[near]
 impl Contract {
     #[init]
     #[private] // only callable by the contract's account
-    pub fn init(end_time: U64, auctioneer: AccountId, ft_contract: AccountId) -> Self {
+    pub fn init(end_time: U64, auctioneer: AccountId, ft_contract: AccountId,nft_contract:AccountId,token_id:TokenId) -> Self {
         Self {
             highest_bid: Bid {
                 bidder: env::current_account_id(),
@@ -36,6 +40,8 @@ impl Contract {
             auctioneer: auctioneer,
             auction_was_claimed: false,
             ft_contract: ft_contract,
+            nft_contract: nft_contract,
+            token_id:token_id
         }
     }
 
@@ -44,7 +50,7 @@ impl Contract {
     }
     
     pub fn claim(&mut self) {
-        assert!(env::predecessor_account_id() == self.auctioneer, "You are not the auctioneer");
+        // assert!(env::predecessor_account_id() == self.auctioneer, "You are not the auctioneer");
         assert!(env::block_timestamp() > self.auction_end_time.into(), "Auction has not ended yet");
         assert!(!self.auction_was_claimed, "Auction has been claimed");
 
@@ -52,8 +58,12 @@ impl Contract {
         let auctioneer = self.auctioneer.clone();
         ft_contract::ext(self.ft_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
-            .with_static_gas(Gas::from_tgas(1))
+        
             .ft_transfer(auctioneer, self.highest_bid.bid);
+
+        nft_contract::ext(self.nft_contract.clone())
+        .with_attached_deposit(NearToken::from_yoctonear(1))
+        .nft_transfer(self.highest_bid.bidder.clone(), self.token_id.clone());
     }
 
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
