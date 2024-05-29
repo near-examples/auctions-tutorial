@@ -8,6 +8,7 @@ use serde_json::json;
 
 const FIVE_NEAR: NearToken = NearToken::from_near(5);
 const FT_WASM_FILEPATH: &str = "./tests/fungible_token.wasm";
+const NFT_WASM_FILEPATH: &str = "./tests/non_fungible_token.wasm";
 
 #[tokio::test]
 
@@ -18,7 +19,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let ft_wasm = std::fs::read(FT_WASM_FILEPATH)?;
     let ft_contract = sandbox.dev_deploy(&ft_wasm).await?;
 
-    let nft_wasm = near_workspaces::compile_project("./tests/nft-contract-royalty/.").await?;
+    let nft_wasm = std::fs::read(NFT_WASM_FILEPATH)?;
     let nft_contract = sandbox.dev_deploy(&nft_wasm).await?;
 
     let root: near_workspaces::Account = sandbox.root_account()?;
