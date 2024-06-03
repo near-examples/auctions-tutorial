@@ -7,7 +7,7 @@ class Bid {
   bid: bigint;
 }
 
-const FIVE_TGAS = BigInt("50000000000000");
+const FIVE_TGAS = BigInt("5000000000000");
 const NO_DEPOSIT = BigInt(0);
 const NO_ARGS = JSON.stringify({});
 
@@ -25,7 +25,6 @@ class AuctionContract {
     this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(0) };
     this.auctioneer = auctioneer;
     this.ft_contract = ft_contract;
-    near.log(ft_contract,"pepe")
   }
 
   // @call({ payableFunction: true })
@@ -73,68 +72,44 @@ class AuctionContract {
   @call({})
   ft_on_transfer({ sender_id, amount, msg }: { sender_id: AccountId, amount: bigint, msg: String }) {
 
+    const previous = { ...this.highest_bid };
+
     assert(this.auction_end_time > near.blockTimestamp(), "Auction has ended");
     assert(near.predecessorAccountId() == this.ft_contract, "The token is not supported");
-    assert(amount >= this.highest_bid.bid, "You must place a higher bid");
+    assert(amount >= previous.bid, "You must place a higher bid");
 
-    if (this.highest_bid.bid > 0) {
-      near.log("inside bidd");
-      // this.ft_transfer(this.highest_bid.bidder, this.highest_bid.bid)
-      NearPromise.new(this.ft_contract)
-      .functionCall("ft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, amount: this.highest_bid.bid }), NO_DEPOSIT, FIVE_TGAS)
-      .then(
-        NearPromise.new(near.currentAccountId())
-          .functionCall(
-            "ft_transfer_callback",
-            JSON.stringify({sender_id,amount}),
-            NO_DEPOSIT,
-            FIVE_TGAS,
-          ),
-      );
-    }
-    near.log("highest_bid");
     this.highest_bid = {
       bidder: sender_id,
       bid: amount,
     };
 
-    return BigInt(0);
-  }
-
-  @call({ privateFunction: true })
-  ft_transfer(account_id: AccountId, amount: BigInt  ) {
-    near.log("ft_transfer");
-    return NearPromise.new(this.ft_contract)
-      .functionCall("ft_transfer", JSON.stringify({ receiver_id: account_id, amount: amount }), NO_DEPOSIT, FIVE_TGAS);
-  }
-
-  @call({ privateFunction: true })
-  ft_transfer_callback({ sender_id, amount}: { sender_id: AccountId, amount: bigint}): BigInt {
-    near.log("ft_transfer_callback");
-    let { result, success } = promiseResult();
-
-    if (success) {
-      near.log("Check");
-      this.highest_bid = {
-        bidder: sender_id,
-        bid: amount,
-      };
-      return BigInt(0);
+    if (previous.bid > 0) {
+      near.log("inside bid");
+      // this.ft_transfer(this.highest_bid.bidder, this.highest_bid.bid)
+      return NearPromise.new(this.ft_contract)
+        .functionCall("ft_transfer", JSON.stringify({ receiver_id: previous.bidder, amount: previous.bid }), BigInt(1), BigInt("30000000000000"))
+        .then(
+          NearPromise.new(near.currentAccountId())
+            .functionCall("ft_transfer_callback", JSON.stringify({}), NO_DEPOSIT, BigInt("30000000000000"))
+        )
+        .asReturn()
     } else {
-      near.log("Promise failed...");
       return BigInt(0);
     }
-
   }
 
+  @call({ privateFunction: true })
+  ft_transfer_callback({ }): BigInt {
+    return BigInt(0);
+  }
 }
 
-function promiseResult(): { result: string; success: boolean } {
+function promiseResult(i: PromiseIndex): { result: string; success: boolean } {
   near.log("promiseResult");
   let result, success;
-  
+
   try {
-    result = near.promiseResult(0);
+    result = near.promiseResult(i);
     success = true;
   } catch {
     result = undefined;
