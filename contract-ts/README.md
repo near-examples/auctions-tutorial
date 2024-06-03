@@ -1,39 +1,22 @@
-# Auction NEAR Contract
+# Hello NEAR Contract
 
-The smart contract exposes a method to bid on an auction.
+The smart contract exposes two methods to enable storing and retrieving a greeting in the NEAR network.
 
 ```ts
 @NearBindgen({})
-class AuctionContract {
-  highest_bid: Bid = { bidder: '', bid: BigInt(1) };
-  auctionEndTime: bigint = BigInt(0);
+class HelloNear {
+  greeting: string = "Hello";
 
-  @initialize({ privateFunction: true })
-  init({ end_time }: { end_time: bigint }) {
-    this.auctionEndTime = end_time;
-    this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(1) };
+  @view // This method is read-only and can be called for free
+  get_greeting(): string {
+    return this.greeting;
   }
 
-  @call({ payableFunction: true })
-  bid(): NearPromise {
-    // Assert the auction is still ongoing
-    assert(this.auctionEndTime > near.blockTimestamp(), "Auction has ended");
-
-    // Current bid
-    const bid = near.attachedDeposit();
-    const bidder = near.predecessorAccountId();
-
-    // Last bid
-    const { bidder: lastBidder, bid: lastBid } = this.highest_bid;
-
-    // Check if the deposit is higher than the current bid
-    assert(bid > lastBid, "You must place a higher bid");
-
-    // Update the highest bid
-    this.highest_bid = { bidder, bid }; // Save the new bid
-
-    // Transfer tokens back to the last bidder
-    return NearPromise.new(lastBidder).transfer(lastBid);
+  @call // This method changes the state, for which it cost gas
+  set_greeting({ greeting }: { greeting: string }): void {
+    // Record a log permanently to the blockchain!
+    near.log(`Saving greeting ${greeting}`);
+    this.greeting = greeting;
   }
 }
 ```
@@ -42,7 +25,7 @@ class AuctionContract {
 
 # Quickstart
 
-1. Make sure you have installed [node.js](https://nodejs.org/en/download/package-manager/) >= 18.
+1. Make sure you have installed [node.js](https://nodejs.org/en/download/package-manager/) >= 16.
 2. Install the [`NEAR CLI`](https://github.com/near/near-cli#setup)
 
 <br />
@@ -66,13 +49,35 @@ near deploy <your-account.testnet> build/release/hello_near.wasm
 
 <br />
 
-## 3. Interact with the Contract
-You can call the contract by running:
+
+## 3. Retrieve the Greeting
+
+`get_greeting` is a read-only method (aka `view` method).
+
+`View` methods can be called for **free** by anyone, even people **without a NEAR account**!
 
 ```bash
-near call <your-account.testnet> bid '{}' --accountId <your-account.testnet> --amount 1
-
-near view <your-account.testnet> get_highest_bid
+# Use near-cli to get the greeting
+near view <your-account.testnet> get_greeting
 ```
 
+<br />
 
+## 4. Store a New Greeting
+`set_greeting` changes the contract's state, for which it is a `call` method.
+
+`Call` methods can only be invoked using a NEAR account, since the account needs to pay GAS for the transaction.
+
+```bash
+# Use near-cli to set a new greeting
+near call <your-account.testnet> set_greeting '{"greeting":"howdy"}' --accountId <your-account.testnet>
+```
+
+**Tip:** If you would like to call `set_greeting` using another account, first login into NEAR using:
+
+```bash
+# Use near-cli to login your NEAR account
+near login
+```
+
+and then use the logged account to sign the transaction: `--accountId <another-account>`.
