@@ -7,7 +7,7 @@ class Bid {
   bid: bigint;
 }
 
-const FIVE_TGAS = BigInt("5000000000000");
+const THIRTY_TGAS = BigInt("30000000000000");
 const NO_DEPOSIT = BigInt(0);
 const NO_ARGS = JSON.stringify({});
 
@@ -87,10 +87,10 @@ class AuctionContract {
       near.log("inside bid");
       // this.ft_transfer(this.highest_bid.bidder, this.highest_bid.bid)
       return NearPromise.new(this.ft_contract)
-        .functionCall("ft_transfer", JSON.stringify({ receiver_id: previous.bidder, amount: previous.bid }), BigInt(1), BigInt("30000000000000"))
+        .functionCall("ft_transfer", JSON.stringify({ receiver_id: previous.bidder, amount: previous.bid }), BigInt(1), THIRTY_TGAS)
         .then(
           NearPromise.new(near.currentAccountId())
-            .functionCall("ft_transfer_callback", JSON.stringify({}), NO_DEPOSIT, BigInt("30000000000000"))
+            .functionCall("ft_transfer_callback", JSON.stringify({}), NO_DEPOSIT, THIRTY_TGAS)
         )
         .asReturn()
     } else {

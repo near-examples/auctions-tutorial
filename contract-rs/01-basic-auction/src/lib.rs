@@ -1,6 +1,6 @@
 // Find all our documentation at https://docs.near.org
 use near_sdk::json_types::{U128, U64};
-use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault, Promise};
+use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault};
 
 pub mod ext;
 pub use crate::ext::*;
