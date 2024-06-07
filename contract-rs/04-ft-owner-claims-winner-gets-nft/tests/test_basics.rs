@@ -87,7 +87,6 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert!(init.is_success());
 
     // Register accounts
-    // number magic 8000000000000000000000
     for account in [
         alice.clone(),
         bob.clone(),

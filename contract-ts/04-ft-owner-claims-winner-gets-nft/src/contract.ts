@@ -1,6 +1,5 @@
 // Find all our documentation at https://docs.near.org
-import { NearBindgen, near, call, view, AccountId, NearPromise, initialize, assert, PromiseIndex } from "near-sdk-js";
-import { predecessorAccountId } from "near-sdk-js/lib/api";
+import { NearBindgen, near, call, view, AccountId, NearPromise, initialize, assert } from "near-sdk-js";
 
 class Bid {
   bidder: AccountId;
@@ -9,7 +8,6 @@ class Bid {
 
 const THIRTY_TGAS = BigInt("30000000000000");
 const NO_DEPOSIT = BigInt(0);
-const NO_ARGS = JSON.stringify({});
 
 @NearBindgen({ requireInit: true })
 class AuctionContract {
@@ -18,36 +16,18 @@ class AuctionContract {
   auctioneer: string = "";
   auction_was_claimed: boolean = false;
   ft_contract: AccountId = "";
+  nft_contract: AccountId = "";
+  token_id: string = "";
 
   @initialize({ privateFunction: true })
-  init({ end_time, auctioneer, ft_contract }: { end_time: bigint, auctioneer: string, ft_contract: AccountId }) {
+  init({ end_time, auctioneer, ft_contract, nft_contract, token_id }: { end_time: bigint, auctioneer: string, ft_contract: AccountId, nft_contract: AccountId, token_id: string }) {
     this.auction_end_time = end_time;
     this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(0) };
     this.auctioneer = auctioneer;
     this.ft_contract = ft_contract;
+    this.nft_contract = nft_contract;
+    this.token_id = token_id;
   }
-
-  // @call({ payableFunction: true })
-  // bid(): NearPromise {
-  //   // Assert the auction is still ongoing
-  //   assert(this.auction_end_time > near.blockTimestamp(), "Auction has ended");
-
-  //   // Current bid
-  //   const bid = near.attachedDeposit();
-  //   const bidder = near.predecessorAccountId();
-
-  //   // Last bid
-  //   const { bidder: lastBidder, bid: lastBid } = this.highest_bid;
-
-  //   // Check if the deposit is higher than the current bid
-  //   assert(bid > lastBid, "You must place a higher bid");
-
-  //   // Update the highest bid
-  //   this.highest_bid = { bidder, bid }; // Save the new bid
-
-  //   // Transfer tokens back to the last bidder
-  //   return NearPromise.new(lastBidder).transfer(lastBid);
-  // }
 
   @view({})
   get_highest_bid(): Bid {
@@ -61,12 +41,25 @@ class AuctionContract {
 
   @call({})
   claim() {
-    // assert(near.predecessorAccountId() == this.auctioneer, "Only auctioneer can end the auction");
+   
     assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
     assert(!this.auction_was_claimed, "Auction has been claimed");
 
     this.auction_was_claimed = true;
-    return NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid);
+
+    return NearPromise.new(this.nft_contract)
+      .functionCall("nft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }), BigInt(1), THIRTY_TGAS)
+      .and(NearPromise.new(this.ft_contract)
+        .functionCall("ft_transfer", JSON.stringify({ receiver_id: this.auctioneer, amount: this.highest_bid.bid }), BigInt(1), THIRTY_TGAS)
+        .then(
+          NearPromise.new(near.currentAccountId())
+            .functionCall("ft_transfer_callback", JSON.stringify({}), NO_DEPOSIT, THIRTY_TGAS)
+        ))
+      .then(
+        NearPromise.new(near.currentAccountId())
+          .functionCall("nft_transfer_callback", JSON.stringify({}), NO_DEPOSIT, THIRTY_TGAS)
+      )
+      .asReturn()
   }
 
   @call({})
@@ -102,19 +95,9 @@ class AuctionContract {
   ft_transfer_callback({ }): BigInt {
     return BigInt(0);
   }
-}
 
-function promiseResult(i: PromiseIndex): { result: string; success: boolean } {
-  near.log("promiseResult");
-  let result, success;
-
-  try {
-    result = near.promiseResult(i);
-    success = true;
-  } catch {
-    result = undefined;
-    success = false;
+  @call({ privateFunction: true })
+  nft_transfer_callback({ }): BigInt {
+    return BigInt(0);
   }
-
-  return { result, success };
 }
