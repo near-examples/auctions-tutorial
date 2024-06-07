@@ -20,7 +20,7 @@ pub struct Contract {
     highest_bid: Bid,
     auction_end_time: U64,
     auctioneer: AccountId,
-    auction_was_claimed: bool,
+    claimed: bool,
     ft_contract: AccountId,
     nft_contract: AccountId,
     token_id: TokenId,
@@ -44,7 +44,7 @@ impl Contract {
             },
             auction_end_time: end_time,
             auctioneer,
-            auction_was_claimed: false,
+            claimed: false,
             ft_contract,
             nft_contract,
             token_id,
@@ -61,15 +61,14 @@ impl Contract {
             "Auction has not ended yet"
         );
 
-        assert!(!self.auction_was_claimed, "Auction has been claimed");
+        assert!(!self.claimed, "Auction has been claimed");
 
-        self.auction_was_claimed = true;
-        let auctioneer = self.auctioneer.clone();
+        self.claimed = true;
 
         ft_contract::ext(self.ft_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
-            .ft_transfer(auctioneer, self.highest_bid.bid);
+            .ft_transfer(self.auctioneer.clone(), self.highest_bid.bid);
 
         nft_contract::ext(self.nft_contract.clone())
             .with_static_gas(Gas::from_tgas(30))
@@ -77,6 +76,7 @@ impl Contract {
             .nft_transfer(self.highest_bid.bidder.clone(), self.token_id.clone());
     }
 
+    // Users bid by transferring FT tokens
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
         require!(
             env::block_timestamp() < self.auction_end_time.into(),

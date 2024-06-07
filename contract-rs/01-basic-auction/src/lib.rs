@@ -1,6 +1,6 @@
 // Find all our documentation at https://docs.near.org
 use near_sdk::json_types::U64;
-use near_sdk::{env, near,require, AccountId, NearToken, PanicOnDefault, Promise};
+use near_sdk::{env, near, require, AccountId, NearToken, PanicOnDefault, Promise};
 
 #[near(serializers = [json, borsh])]
 #[derive(Clone)]

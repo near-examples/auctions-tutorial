@@ -45,11 +45,11 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         .unwrap();
 
     let auctioneer = root
-    .create_subaccount("auctioneer")
-    .initial_balance(FIVE_NEAR)
-    .transact()
-    .await?
-    .unwrap();
+        .create_subaccount("auctioneer")
+        .initial_balance(FIVE_NEAR)
+        .transact()
+        .await?
+        .unwrap();
 
     let contract_account = root
         .create_subaccount("contract")
@@ -96,10 +96,10 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     // Alice makes first bid
     let alice_bid = alice
-    .call(contract.id(), "bid")
-    .deposit(NearToken::from_near(1))
-    .transact()
-    .await?;
+        .call(contract.id(), "bid")
+        .deposit(NearToken::from_near(1))
+        .transact()
+        .await?;
 
     assert!(alice_bid.is_success());
 
@@ -115,10 +115,10 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     // Bob makes second bid
     let bob_bid = bob
-    .call(contract.id(), "bid")
-    .deposit(NearToken::from_near(2))
-    .transact()
-    .await?;
+        .call(contract.id(), "bid")
+        .deposit(NearToken::from_near(2))
+        .transact()
+        .await?;
 
     assert!(bob_bid.is_success());
 
@@ -133,10 +133,10 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     // Alice makes the third bid but fails
     let alice_bid = alice
-    .call(contract.id(), "bid")
-    .deposit(NearToken::from_near(1))
-    .transact()
-    .await?;
+        .call(contract.id(), "bid")
+        .deposit(NearToken::from_near(1))
+        .transact()
+        .await?;
 
     assert!(alice_bid.is_failure());
 
@@ -151,11 +151,11 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     // Auctioneer claims auction but did not finish
     let auctioneer_claim = auctioneer
-    .call(contract_account.id(), "claim")
-    .args_json(json!({}))
-    .gas(Gas::from_tgas(300))
-    .transact()
-    .await?;
+        .call(contract_account.id(), "claim")
+        .args_json(json!({}))
+        .gas(Gas::from_tgas(300))
+        .transact()
+        .await?;
     assert!(auctioneer_claim.is_failure());
 
     // Fast forward
@@ -164,21 +164,25 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     sandbox.fast_forward(blocks_to_advance).await?;
 
     let auctioneer_claim = auctioneer
-    .call(contract_account.id(), "claim")
-    .args_json(json!({}))
-    .gas(Gas::from_tgas(300))
-    .transact()
-    .await?;
+        .call(contract_account.id(), "claim")
+        .args_json(json!({}))
+        .gas(Gas::from_tgas(300))
+        .transact()
+        .await?;
 
     assert!(auctioneer_claim.is_success());
 
+    // TODO:
+    // Auctioneer has the balance
+    // NFT is transferred to the highest bidder
+    
     // Auctioneer claims auction back but fails
-    let auctioneer_claim =auctioneer
-    .call(contract_account.id(), "claim")
-    .args_json(json!({}))
-    .gas(Gas::from_tgas(300))
-    .transact()
-    .await?;
+    let auctioneer_claim = auctioneer
+        .call(contract_account.id(), "claim")
+        .args_json(json!({}))
+        .gas(Gas::from_tgas(300))
+        .transact()
+        .await?;
 
     assert!(auctioneer_claim.is_failure());
 

@@ -6,7 +6,7 @@ class Bid {
   bid: bigint;
 }
 
-const THIRTY_TGAS = BigInt("20000000000000");
+const TWENTY_TGAS = BigInt("20000000000000");
 const NO_DEPOSIT = BigInt(0);
 
 @NearBindgen({ requireInit: true })
@@ -14,14 +14,14 @@ class AuctionContract {
   highest_bid: Bid = { bidder: '', bid: BigInt(0) };
   auction_end_time: bigint = BigInt(0);
   auctioneer: string = "";
-  auction_was_claimed: boolean = false;
+  claimed: boolean = false;
   nft_contract: AccountId = "";
   token_id: string = "";
 
   @initialize({ privateFunction: true })
   init({ end_time, auctioneer, nft_contract, token_id }: { end_time: bigint, auctioneer: string, nft_contract: AccountId, token_id: string }) {
     this.auction_end_time = end_time;
-    this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(0) };
+    this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(1) };
     this.auctioneer = auctioneer;
     this.nft_contract = nft_contract;
     this.token_id = token_id;
@@ -61,26 +61,20 @@ class AuctionContract {
 
   @call({})
   claim() {
-   
     assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
-    assert(!this.auction_was_claimed, "Auction has been claimed");
+    assert(!this.claimed, "Auction has been claimed");
+    this.claimed = true;
 
-    this.auction_was_claimed = true;
-
-    
     return NearPromise.new(this.nft_contract)
-      .functionCall("nft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }), BigInt(1), THIRTY_TGAS)
-      .and(NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid))
-      .then(
-        NearPromise.new(near.currentAccountId())
-          .functionCall("nft_transfer_callback", JSON.stringify({}), NO_DEPOSIT, THIRTY_TGAS)
+      .functionCall(
+        "nft_transfer",
+        JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }),
+        BigInt(1),
+        TWENTY_TGAS
+      )
+      .and(
+        NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid)
       )
       .asReturn()
-
-  }
-
-  @call({ privateFunction: true })
-  nft_transfer_callback({ }): BigInt {
-    return BigInt(0);
   }
 }

@@ -60,47 +60,37 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let highest_bid_json = contract.view("get_highest_bid").await?;
     let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
 
-    assert_eq!(
-        highest_bid.bid,
-        NearToken::from_near(1)
-    );
+    assert_eq!(highest_bid.bid, NearToken::from_near(1));
     assert_eq!(highest_bid.bidder, *alice.id());
-
 
     // Bob makes second bid
     let bob_bid = bob
-    .call(contract.id(), "bid")
-    .deposit(NearToken::from_near(2))
-    .transact()
-    .await?;
+        .call(contract.id(), "bid")
+        .deposit(NearToken::from_near(2))
+        .transact()
+        .await?;
 
     assert!(bob_bid.is_success());
 
     let highest_bid_json = contract.view("get_highest_bid").await?;
     let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
 
-    assert_eq!(
-        highest_bid.bid,
-        NearToken::from_near(2)
-    );
+    assert_eq!(highest_bid.bid, NearToken::from_near(2));
     assert_eq!(highest_bid.bidder, *bob.id());
 
     // Alice makes the third bid but fails
     let alice_bid = alice
-    .call(contract.id(), "bid")
-    .deposit(NearToken::from_near(1))
-    .transact()
-    .await?;
+        .call(contract.id(), "bid")
+        .deposit(NearToken::from_near(1))
+        .transact()
+        .await?;
 
     assert!(alice_bid.is_failure());
 
     let highest_bid_json = contract.view("get_highest_bid").await?;
     let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
 
-    assert_eq!(
-        highest_bid.bid,
-        NearToken::from_near(2)
-    );
+    assert_eq!(highest_bid.bid, NearToken::from_near(2));
     assert_eq!(highest_bid.bidder, *bob.id());
 
     Ok(())

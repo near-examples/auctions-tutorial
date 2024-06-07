@@ -6,20 +6,17 @@ class Bid {
   bid: bigint;
 }
 
-const THIRTY_TGAS = BigInt("20000000000000");
-const NO_DEPOSIT = BigInt(0);
-
 @NearBindgen({ requireInit: true })
 class AuctionContract {
   highest_bid: Bid = { bidder: '', bid: BigInt(0) };
   auction_end_time: bigint = BigInt(0);
   auctioneer: string = "";
-  auction_was_claimed: boolean = false;
+  claimed: boolean = false;
 
   @initialize({ privateFunction: true })
   init({ end_time, auctioneer}: { end_time: bigint, auctioneer: string}) {
     this.auction_end_time = end_time;
-    this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(0) };
+    this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(1) };
     this.auctioneer = auctioneer;
   }
 
@@ -57,15 +54,9 @@ class AuctionContract {
 
   @call({})
   claim() {
-   
     assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
-    assert(!this.auction_was_claimed, "Auction has been claimed");
-
-    this.auction_was_claimed = true;
-
-    
+    assert(!this.claimed, "Auction has been claimed");
+    this.claimed = true;
     return NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid)
-
   }
-
 }

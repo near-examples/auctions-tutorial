@@ -11,12 +11,10 @@ class AuctionContract {
   highest_bid: Bid = { bidder: '', bid: BigInt(0) };
   auction_end_time: bigint = BigInt(0);
 
-
   @initialize({ privateFunction: true })
   init({ end_time}: { end_time: bigint}) {
     this.auction_end_time = end_time;
-    this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(0) };
-
+    this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(1) };
   }
 
   @call({ payableFunction: true })
@@ -35,7 +33,7 @@ class AuctionContract {
     assert(bid > lastBid, "You must place a higher bid");
 
     // Update the highest bid
-    this.highest_bid = { bidder, bid }; // Save the new bid
+    this.highest_bid = { bidder, bid };
 
     // Transfer tokens back to the last bidder
     return NearPromise.new(lastBidder).transfer(lastBid);

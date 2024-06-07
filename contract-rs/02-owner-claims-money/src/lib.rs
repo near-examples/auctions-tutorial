@@ -15,7 +15,7 @@ pub struct Contract {
     highest_bid: Bid,
     auction_end_time: U64,
     auctioneer: AccountId,
-    auction_was_claimed: bool,
+    claimed: bool,
 }
 
 #[near]
@@ -26,10 +26,10 @@ impl Contract {
         Self {
             highest_bid: Bid {
                 bidder: env::current_account_id(),
-                bid: NearToken::from_yoctonear(0),
+                bid: NearToken::from_yoctonear(1),
             },
             auction_end_time: end_time,
-            auction_was_claimed: false,
+            claimed: false,
             auctioneer,
         }
     }
@@ -73,12 +73,11 @@ impl Contract {
     pub fn claim(&mut self) -> Promise {
         require!(
             env::block_timestamp() > self.auction_end_time.into(),
-            "Auction has ended"
+            "Auction has not ended yet"
         );
-        
-        require!(!self.auction_was_claimed, "Auction has been claimed");
-        self.auction_was_claimed = true;
-        let auctioneer = self.auctioneer.clone();
-        Promise::new(auctioneer).transfer(self.highest_bid.bid)
+
+        require!(!self.claimed, "Auction has already been claimed");
+        self.claimed = true;
+        Promise::new(self.auctioneer.clone()).transfer(self.highest_bid.bid)
     }
 }

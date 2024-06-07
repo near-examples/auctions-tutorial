@@ -1,6 +1,6 @@
 // Find all our documentation at https://docs.near.org
-use near_sdk::json_types::{U64};
-use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault,Promise};
+use near_sdk::json_types::U64;
+use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault, Promise};
 
 pub mod ext;
 pub use crate::ext::*;
@@ -20,7 +20,7 @@ pub struct Contract {
     highest_bid: Bid,
     auction_end_time: U64,
     auctioneer: AccountId,
-    auction_was_claimed: bool,
+    claimed: bool,
     nft_contract: AccountId,
     token_id: TokenId,
 }
@@ -38,11 +38,11 @@ impl Contract {
         Self {
             highest_bid: Bid {
                 bidder: env::current_account_id(),
-                bid: NearToken::from_yoctonear(0),
+                bid: NearToken::from_yoctonear(1),
             },
             auction_end_time: end_time,
             auctioneer,
-            auction_was_claimed: false,
+            claimed: false,
             nft_contract,
             token_id,
         }
@@ -86,12 +86,11 @@ impl Contract {
             "Auction has not ended yet"
         );
 
-        assert!(!self.auction_was_claimed, "Auction has been claimed");
+        assert!(!self.claimed, "Auction has already been claimed");
 
-        self.auction_was_claimed = true;
-        let auctioneer = self.auctioneer.clone();
+        self.claimed = true;
 
-        Promise::new(auctioneer).transfer(self.highest_bid.bid);
+        Promise::new(self.auctioneer.clone()).transfer(self.highest_bid.bid);
 
         nft_contract::ext(self.nft_contract.clone())
             .with_static_gas(Gas::from_tgas(30))
