@@ -1,4 +1,4 @@
-name: 01 - Tests Contract RS
+name: 03 - Tests Contract RS
 on: push
 jobs:
   workflows:
