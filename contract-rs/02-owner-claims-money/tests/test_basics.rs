@@ -123,7 +123,9 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(auctioneer_claim.is_success());
 
-    // TODO: Assert the auctioneer got the money
+    let auctioneer_balance = auctioneer.view_account().await?.balance;
+    assert!(auctioneer_balance <= NearToken::from_near(7));
+    assert!(auctioneer_balance > NearToken::from_millinear(6990));
 
     // Auctioneer claims auction back but fails
     let auctioneer_claim = auctioneer

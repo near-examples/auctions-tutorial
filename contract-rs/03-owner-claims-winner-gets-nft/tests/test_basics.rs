@@ -1,9 +1,7 @@
 use chrono::Utc;
 use contract_rs::{Bid, TokenId};
-use near_sdk::{json_types::U128, log, NearToken};
-use near_sdk::{AccountId, Gas};
+use near_sdk::{json_types::U128, log, NearToken,Gas};
 use near_workspaces::result::ExecutionFinalResult;
-use near_workspaces::{Account, Contract};
 use serde_json::json;
 
 const FIVE_NEAR: NearToken = NearToken::from_near(5);
@@ -174,7 +172,20 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     // TODO:
     // Auctioneer has the balance
-    // NFT is transferred to the highest bidder
+    let token_info: serde_json::Value = nft_contract
+        .call("nft_token")
+        .args_json(json!({"token_id": "1"}))
+        .transact()
+        .await?
+        .json()
+        .unwrap();
+    let owner_id: String = token_info["owner_id"].as_str().unwrap().to_string();
+
+    assert_eq!(
+        owner_id,
+        bob.id().to_string(),
+        "token owner is not first_buyer"
+    );
     
     // Auctioneer claims auction back but fails
     let auctioneer_claim = auctioneer

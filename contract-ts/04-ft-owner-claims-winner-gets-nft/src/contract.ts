@@ -48,10 +48,9 @@ class AuctionContract {
 
     return NearPromise.new(this.nft_contract)
       .functionCall("nft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }), BigInt(1), THIRTY_TGAS)
-      .and(
-        NearPromise.new(this.ft_contract)
-        .functionCall("ft_transfer", JSON.stringify({ receiver_id: this.auctioneer, amount: this.highest_bid.bid }), BigInt(1), THIRTY_TGAS)
-      ).asReturn()
+      .then(NearPromise.new(this.ft_contract)
+      .functionCall("ft_transfer", JSON.stringify({ receiver_id: this.auctioneer, amount: this.highest_bid.bid }), BigInt(1), THIRTY_TGAS))
+      .asReturn()
   }
 
   @call({})

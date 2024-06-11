@@ -9,12 +9,10 @@ import { setDefaultResultOrder } from 'dns'; setDefaultResultOrder('ipv4first');
 const test = anyTest;
 const NFT_WASM_FILEPATH = "./sandbox-test/non_fungible_token.wasm";
 test.beforeEach(async (t) => {
-  console.log("Init the worker and start a Sandbox server")
   // Init the worker and start a Sandbox server
   const worker = t.context.worker = await Worker.init();
 
   // Create accounts
-  console.log("Create accounts");
   const root = worker.rootAccount;
 
   const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("50 N").toString() });
@@ -24,13 +22,11 @@ test.beforeEach(async (t) => {
   const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("50 N").toString() });
 
   // Deploy contract nft 
-  console.log("Deploy contract nft");
   await nft_contract.deploy(NFT_WASM_FILEPATH);
   await nft_contract.call(nft_contract, "new_default_meta", { "owner_id": nft_contract.accountId });
 
   const token_id = "1";
   // Mint NFT
-  console.log("Mint NFT");
   let request_payload = {
     "token_id": token_id,
     "receiver_id": contract.accountId,
@@ -44,11 +40,9 @@ test.beforeEach(async (t) => {
   await nft_contract.call(nft_contract, "nft_mint", request_payload, { attachedDeposit: NEAR.from("8000000000000000000000").toString(), gas: "300000000000000" });
 
   // Deploy contract (input from package.json)
-  console.log("Deploy contract (input from package.json)");
   await contract.deploy(process.argv[2]);
 
   // Initialize contract, finishes in 1 minute
-  console.log("Initialize contract, finishes in 1 minute");
   await contract.call(contract, "init", {
     end_time: String((Date.now() + 60000) * 10 ** 6),
     auctioneer: auctioneer.accountId,
@@ -69,7 +63,6 @@ test.afterEach.always(async (t) => {
 });
 
 test("Bids are placed", async (t) => {
-  console.log("Bids are placed");
   const { alice, contract } = t.context.accounts;
 
   await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
@@ -78,8 +71,6 @@ test("Bids are placed", async (t) => {
 
   t.is(highest_bid.bidder, alice.accountId);
   t.is(highest_bid.bid, NEAR.parse("1 N").toString());
-  console.log("Bids are placed finished");
-
 });
 
 test("Outbid returns previous bid", async (t) => {
@@ -115,11 +106,9 @@ test("Auction closes", async (t) => {
 test("Claim auction", async (t) => {
   const { alice, bob, contract, auctioneer,nft_contract} = t.context.accounts;
 
-  console.log("Claim auction");
   await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString(), gas: "300000000000000" });
-  console.log("alice");
   await bob.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("2 N").toString(), gas: "300000000000000" });
-  console.log("bob");
+
   const auctioneerBalance = await auctioneer.balance();
   const available = parseFloat(auctioneerBalance.available.toHuman());
 

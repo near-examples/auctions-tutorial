@@ -1,4 +1,4 @@
-name: Tests Contract RS
+name: 01 - Tests Contract RS
 on: push
 jobs:
   workflows:
@@ -10,5 +10,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install and test modules
         run: |
-          cd ./contract-rs
+          cd ./contract-rs/04-ft-owner-claims-winner-gets-nft
           cargo test

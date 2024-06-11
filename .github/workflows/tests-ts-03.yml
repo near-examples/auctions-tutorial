@@ -1,4 +1,4 @@
-name: Tests Contract TS
+name: 03 - Tests Contract TS
 on: push
 jobs:
   workflows:
@@ -14,6 +14,6 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install and test modules
         run: |
-          cd ./contract-ts
+          cd ./contract-ts/03-owner-claims-winner-gets-nft
           yarn
           yarn test

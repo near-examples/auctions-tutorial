@@ -8,12 +8,10 @@ import { setDefaultResultOrder } from 'dns'; setDefaultResultOrder('ipv4first');
  */
 const test = anyTest;
 test.beforeEach(async (t) => {
-  console.log("Init the worker and start a Sandbox server")
   // Init the worker and start a Sandbox server
   const worker = t.context.worker = await Worker.init();
 
   // Create accounts
-  console.log("Create accounts");
   const root = worker.rootAccount;
 
   const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("50 N").toString() });
@@ -21,18 +19,16 @@ test.beforeEach(async (t) => {
   const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("50 N").toString() });
 
   // Deploy contract (input from package.json)
-  console.log("Deploy contract (input from package.json)");
   await contract.deploy(process.argv[2]);
 
   // Initialize contract, finishes in 1 minute
-  console.log("Initialize contract, finishes in 1 minute");
   await contract.call(contract, "init", {
     end_time: String((Date.now() + 60000) * 10 ** 6),
   });
 
   // Save state for test runs, it is unique for each test
   t.context.worker = worker;
-  t.context.accounts = { alice, bob, contract};
+  t.context.accounts = { alice, bob, contract };
 });
 
 test.afterEach.always(async (t) => {
@@ -43,7 +39,6 @@ test.afterEach.always(async (t) => {
 });
 
 test("Bids are placed", async (t) => {
-  console.log("Bids are placed");
   const { alice, contract } = t.context.accounts;
 
   await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
@@ -52,8 +47,6 @@ test("Bids are placed", async (t) => {
 
   t.is(highest_bid.bidder, alice.accountId);
   t.is(highest_bid.bid, NEAR.parse("1 N").toString());
-  console.log("Bids are placed finished");
-
 });
 
 test("Outbid returns previous bid", async (t) => {
