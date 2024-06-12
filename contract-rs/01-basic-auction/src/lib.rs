@@ -24,7 +24,7 @@ impl Contract {
         Self {
             highest_bid: Bid {
                 bidder: env::current_account_id(),
-                bid: NearToken::from_yoctonear(0),
+                bid: NearToken::from_yoctonear(1),
             },
             auction_end_time: end_time,
         }
