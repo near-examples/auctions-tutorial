@@ -1,0 +1,147 @@
+.container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  margin-bottom: 2rem;
+}
+
+.imageSection {.container, .historyContainer {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  margin-bottom: 2rem;
+  background-color: #f2f2f2;
+}
+
+.imageSection {
+  position: relative;
+  padding: 1rem;
+}
+
+.skeletonImage {
+  width: 100%;
+  height: 200px;
+  background-color: #e0e0e0;
+  border-radius: 8px;
+}
+
+.description {
+  padding: 1rem;
+  text-align: center;
+}
+
+.skeletonText, .skeletonStats {
+  height: 20px;
+  background-color: #e0e0e0;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.skeletonStats {
+  height: 30px;
+  width: 50px;
+  margin: 0 auto;
+}
+
+.priceSection {
+  background-color: #f7f7f7;
+  padding: 1rem;
+  text-align: center;
+}
+
+.skeletonPrice {
+  height: 30px;
+  background-color: #e0e0e0;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.skeletonButton {
+  height: 40px;
+  background-color: #e0e0e0;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.timer {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.timer div {
+  text-align: center;
+}
+
+.timer span {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+
+.skeletonTime {
+  height: 40px;
+  width: 40px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+}
+
+.bidItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.bidItem:last-child {
+  border-bottom: none;
+}
+  position: relative;
+}
+
+.imageSection img {
+  width: 100%;
+  height: auto;
+}
+
+.description {
+  padding: 1rem;
+  text-align: center;
+}
+
+.stats {
+  margin-top: 1rem;
+}
+
+.stats span {
+  font-size: 1.2rem;
+  color: #555;
+}
+
+.priceSection {
+  background-color: #f7f7f7;
+  padding: 1rem;
+  text-align: center;
+}
+
+.currentPrice {
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.bidButton {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+}

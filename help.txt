@@ -2,3 +2,74 @@ basic-auction
 owner-claims-money
 owner-claims-winner-gets-nft
 ft-owner-claims-winner-gets-nft
+
+
+steps: 
+FT deploy and initialize the contract
+near create-account ftexample.testnet  --useFaucet
+    Storing credentials for account: ftexample.testnet (network: testnet)
+    Saving key to '~/.near-credentials/testnet/ftexample.testnet.json'
+
+near deploy ftexample.testnet ./tests/fungible_token.wasm
+    Deploying contract ./tests/fungible_token.wasm in ftexample.testnet
+    Done deploying to ftexample.testnet
+    Transaction Id 3xS5t7htfUwT8Qt23r23K6WfrJtPjU1X728PNjkZnvPe
+    Open the explorer for more info: https://testnet.nearblocks.io/txns/3xS5t7htfUwT8Qt23r23K6WfrJtPjU1X728PNjkZnvPe
+
+near call ftexample.testnet new_default_meta '{"owner_id":"maguila.testnet","total_supply":"1000000"}' --accountId ftexample.testnet
+    Scheduling a call: ftexample.testnet.new_default_meta({"owner_id":"maguila.testnet","total_supply":"1000000"})
+    Receipt: Hra71Su3dDr2vMvdxQyN8e9GEazZXTRtdYvLvrjQeXL1
+            Log [ftexample.testnet]: EVENT_JSON:{"standard":"nep141","version":"1.0.0","event":"ft_mint","data":[{"owner_id":"maguila.testnet","amount":"1000000","memo":"Initial tokens supply is minted"}]}
+    Transaction Id 6S5V8zW6kbyLpDQpUhDt7D7MRAa8oPVttmc2MabDBhnb
+    Open the explorer for more info: https://testnet.nearblocks.io/txns/6S5V8zW6kbyLpDQpUhDt7D7MRAa8oPVttmc2MabDBhnb
+    ''   
+
+near call ftauction.testnet init '{"end_time":"1718666628624000000","auctioneer":"maguila.testnet","ft_contract":"usdt.fakes.testnet","nft_contract":"bobcoin.mintspace2.testnet","token_id":"0"}' --accountId ftexample.testnet
+
+
+near create-account nftexmaples.testnet  --useFaucet
+
+near create-account ftauction.testnet  --useFaucet
+near deploy ftauction.testnet ./target/wasm32-unknown-unknown/release/contract_rs.wasm
+
+
+- ft -> https://near-faucet.io/ no hace falta deploy  usdt.fakes.testnet
+- nft -> https://testnet.mintbase.xyz/ investigar mint
+
+Agrema metodos para cambiar para cambiar parmetros como el tiempo(solo para testesar OJO, no enviar al repo)
+
+frontend para 2
+frontend for 3
+frontend for 4
+
+usdt.fakes.testnet
+
+
+near call ftauction.testnet init '{"end_time":"1718666628624000000","auctioneer":"maguila.testnet","ft_contract":"usdt.fakes.testnet","nft_contract":"bobcoin.mintspace2.testnet","token_id":"0"}' --accountId ftexample.testnet
+Scheduling a call: ftauction.testnet.init({"end_time":"1718666628624000000","auctioneer":"maguila.testnet","ft_contract":"usdt.fakes.testnet","nft_contract":"bobcoin.mintspace2.testnet","token_id":"0"})
+Transaction Id 52mDpGLT1CpUJ6iUqidjmspxPcfD5EpLauGBUmh3rFcC
+Open the explorer for more info: https://testnet.nearblocks.io/txns/52mDpGLT1CpUJ6iUqidj
+
+
+//String((Date.now() + 636000) * 10 ** 6) 10 mint
+https://testnet.nearblocks.io/address/ftauction.testnet?transactionHashes=2qmwXr9hkw8H3Dg1NuWPtRd43ggwPiX5k32AvGza72Xe
+
+
+export const FTContract = "dai.fakes.testnet"
+
+near call dai.fakes.testnet ft_transfer_call '{
+  "receiver_id": "ftauction.testnet",
+  "amount": "2",
+  "msg": ""
+}' --account-id maguila.testnet --gas 30000000000000 --deposit 0.000000000000000000000001
+
+near call dai.fakes.testnet ft_transfer_call '{
+  "receiver_id": "ftauction.testnet",
+  "amount": "2",
+  "msg": ""
+}' --account-id maguila.testnet --gas 300000000000000 --deposit 0.000000000000000000000001
+
+
+near view dai.fakes.testnet ft_balance_of '{"account_id":"ftauction.testnet"}'
+near view dai.fakes.testnet ft_balance_of '{"account_id":"maguila.testnet"}'
+near view bobcoin.mintspace2.testnet nft_token '{"token_id":"1"}'

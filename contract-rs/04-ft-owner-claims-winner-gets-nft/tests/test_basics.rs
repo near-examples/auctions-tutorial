@@ -86,6 +86,20 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(init.is_success());
 
+    // let a_minute_from_now = (now + 120) * 1000000000;
+
+    // let init: ExecutionFinalResult = contract
+    // .call("update")
+    // .args_json(
+    //     json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"ft_contract": ft_contract.id(),"nft_contract":nft_contract.id(),"token_id":"1" }),
+    // )
+    // .transact()
+    // .await?;
+
+    // let info_json = contract.view("get_info").await?;
+    // let info: Contract = info_json.json::<Contract>()?;
+    // println!("auctioneer_claim pepe: {:#?}", pepe);
+
     // Register accounts
     for account in [
         alice.clone(),

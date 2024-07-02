@@ -9,7 +9,7 @@ pub struct Bid {
     pub bid: NearToken,
 }
 
-#[near(contract_state)]
+#[near(contract_state,serializers = [json, borsh])]
 #[derive(PanicOnDefault)]
 pub struct Contract {
     highest_bid: Bid,
@@ -68,6 +68,15 @@ impl Contract {
 
     pub fn get_auction_end_time(&self) -> U64 {
         self.auction_end_time
+    }
+
+    pub fn get_info(&self) -> Contract {
+        Contract {
+            highest_bid: self.highest_bid.clone(),
+            auction_end_time: self.auction_end_time.clone(),
+            auctioneer: self.auctioneer.clone(),
+            claimed: self.claimed.clone(),
+        }
     }
 
     pub fn claim(&mut self) -> Promise {

@@ -1,5 +1,5 @@
 use chrono::Utc;
-use contract_rs::Bid;
+use contract_rs::{Bid,InfoContract};
 use near_sdk::{log, NearToken};
 use serde_json::json;
 
@@ -47,6 +47,10 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         .await?;
 
     assert!(init.is_success());
+
+    let info_json = contract.view("get_info").await?;
+    let info: InfoContract = info_json.json::<InfoContract>()?;
+
 
     // Alice makes first bid
     let alice_bid = alice
