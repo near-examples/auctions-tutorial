@@ -55,35 +55,6 @@ impl Contract {
         self.highest_bid.clone()
     }
 
-    pub fn update(
-        &mut self,
-        end_time: Option<U64>,
-        auctioneer: Option<AccountId>,
-        ft_contract: Option<AccountId>,
-        nft_contract: Option<AccountId>,
-        token_id: Option<TokenId>,
-        claimed: Option<bool>
-    ) {
-        if let Some(end_time) = end_time {
-            self.auction_end_time = end_time;
-        }
-        if let Some(auctioneer) = auctioneer {
-            self.auctioneer = auctioneer;
-        }
-        if let Some(ft_contract) = ft_contract {
-            self.ft_contract = ft_contract;
-        }
-        if let Some(nft_contract) = nft_contract {
-            self.nft_contract = nft_contract;
-        }
-        if let Some(token_id) = token_id {
-            self.token_id = token_id;
-        }
-        if let Some(claimed) = claimed {
-            self.claimed = claimed;
-        }
-    }
-
     pub fn get_info(&self) -> &Contract {
         self
     }
