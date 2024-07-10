@@ -14,7 +14,7 @@ pub struct Bid {
 
 pub type TokenId = String;
 
-#[near(contract_state)]
+#[near(contract_state,serializers = [json, borsh])]
 #[derive(PanicOnDefault)]
 pub struct Contract {
     highest_bid: Bid,
@@ -53,6 +53,10 @@ impl Contract {
 
     pub fn get_highest_bid(&self) -> Bid {
         self.highest_bid.clone()
+    }
+
+    pub fn get_info(&self) -> &Contract {
+        self
     }
 
     pub fn claim(&mut self) {

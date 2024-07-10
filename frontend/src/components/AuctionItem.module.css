@@ -1,0 +1,40 @@
+.container {
+  /* border: 1px solid #ddd; */
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  margin-bottom: 2rem;
+}
+
+.imageSection {
+  position: relative;
+}
+
+.imageSection img {
+  width: 100%;
+  height: auto;
+}
+
+.description {
+  padding: 1rem;
+  text-align: center;
+}
+
+.stats {
+  margin-top: 1rem;
+}
+
+.stats span {
+  font-size: 1.2rem;
+  color: #555;
+}
+
+
+.detail{
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

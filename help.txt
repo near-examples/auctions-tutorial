@@ -1,4 +1,0 @@
-basic-auction
-owner-claims-money
-owner-claims-winner-gets-nft
-ft-owner-claims-winner-gets-nft
