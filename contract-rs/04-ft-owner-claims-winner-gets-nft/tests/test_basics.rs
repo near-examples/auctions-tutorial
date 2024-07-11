@@ -1,5 +1,5 @@
 use chrono::Utc;
-use contract_rs::{Bid, TokenId};
+use contract_rs::Bid;
 use near_sdk::{json_types::U128, log, NearToken};
 use near_sdk::{AccountId, Gas};
 use near_workspaces::result::ExecutionFinalResult;
@@ -92,7 +92,8 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         bob.clone(),
         contract_account.clone(),
         auctioneer.clone(),
-    ].iter()
+    ]
+    .iter()
     {
         let register = account
             .call(ft_contract.id(), "storage_deposit")

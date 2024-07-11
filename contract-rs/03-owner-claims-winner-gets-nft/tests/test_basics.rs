@@ -1,6 +1,6 @@
 use chrono::Utc;
-use contract_rs::{Bid, TokenId};
-use near_sdk::{json_types::U128, log, NearToken,Gas};
+use contract_rs::Bid;
+use near_sdk::{log, NearToken,Gas};
 use near_workspaces::result::ExecutionFinalResult;
 use serde_json::json;
 

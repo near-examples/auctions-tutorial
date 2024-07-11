@@ -9,16 +9,9 @@ pub struct Bid {
     pub bid: NearToken,
 }
 
-#[near(contract_state,serializers = [json, borsh])]
+#[near(contract_state, serializers = [json, borsh])]
 #[derive(PanicOnDefault)]
 pub struct Contract {
-    highest_bid: Bid,
-    auction_end_time: U64,
-}
-
-#[near(serializers = [json])]
-#[derive(Clone)]
-pub struct InfoContract {
     highest_bid: Bid,
     auction_end_time: U64,
 }
@@ -26,7 +19,7 @@ pub struct InfoContract {
 #[near]
 impl Contract {
     #[init]
-    #[private] // only callable by the contract's account
+    #[private] // Only callable by the contract's account
     pub fn init(end_time: U64) -> Self {
         Self {
             highest_bid: Bid {
@@ -45,11 +38,11 @@ impl Contract {
             "Auction has ended"
         );
 
-        // current bid
+        // Current bid
         let bid = env::attached_deposit();
         let bidder = env::predecessor_account_id();
 
-        // last bid
+        // Last bid
         let Bid {
             bidder: last_bidder,
             bid: last_bid,
@@ -73,11 +66,8 @@ impl Contract {
         self.auction_end_time
     }
 
-    pub fn get_info(&self) -> InfoContract {
-        InfoContract {
-            highest_bid: self.highest_bid.clone(),
-            auction_end_time: self.auction_end_time.clone(),
-        }
+    pub fn get_auction_info(&self) -> &Contract {
+        self
     }
 }
 

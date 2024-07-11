@@ -9,7 +9,7 @@ pub struct Bid {
     pub bid: NearToken,
 }
 
-#[near(contract_state,serializers = [json, borsh])]
+#[near(contract_state, serializers = [json, borsh])]
 #[derive(PanicOnDefault)]
 pub struct Contract {
     highest_bid: Bid,
@@ -42,11 +42,11 @@ impl Contract {
             "Auction has ended"
         );
 
-        // current bid
+        // Current bid
         let bid = env::attached_deposit();
         let bidder = env::predecessor_account_id();
 
-        // last bid
+        // Last bid
         let Bid {
             bidder: last_bidder,
             bid: last_bid,
@@ -62,23 +62,6 @@ impl Contract {
         Promise::new(last_bidder).transfer(last_bid)
     }
 
-    pub fn get_highest_bid(&self) -> Bid {
-        self.highest_bid.clone()
-    }
-
-    pub fn get_auction_end_time(&self) -> U64 {
-        self.auction_end_time
-    }
-
-    pub fn get_info(&self) -> Contract {
-        Contract {
-            highest_bid: self.highest_bid.clone(),
-            auction_end_time: self.auction_end_time.clone(),
-            auctioneer: self.auctioneer.clone(),
-            claimed: self.claimed.clone(),
-        }
-    }
-
     pub fn claim(&mut self) -> Promise {
         require!(
             env::block_timestamp() > self.auction_end_time.into(),
@@ -87,6 +70,20 @@ impl Contract {
 
         require!(!self.claimed, "Auction has already been claimed");
         self.claimed = true;
+
+        // Transfer tokens to the auctioneer
         Promise::new(self.auctioneer.clone()).transfer(self.highest_bid.bid)
+    }
+
+    pub fn get_highest_bid(&self) -> Bid {
+        self.highest_bid.clone()
+    }
+
+    pub fn get_auction_end_time(&self) -> U64 {
+        self.auction_end_time
+    }
+
+    pub fn get_auction_info(&self) -> &Contract {
+        self
     }
 }
