@@ -48,21 +48,6 @@ impl Contract {
         }
     }
 
-    pub fn get_highest_bid(&self) -> Bid {
-        self.highest_bid.clone()
-    }
-
-    pub fn get_info(&self) -> Contract {
-        Contract {
-            highest_bid: self.highest_bid.clone(),
-            auction_end_time: self.auction_end_time.clone(),
-            auctioneer: self.auctioneer.clone(),
-            claimed: self.claimed.clone(),
-            nft_contract: self.nft_contract.clone(),
-            token_id: self.token_id.clone(),
-        }
-    }
-
     #[payable]
     pub fn bid(&mut self) -> Promise {
         // Assert the auction is still ongoing
@@ -71,11 +56,11 @@ impl Contract {
             "Auction has ended"
         );
 
-        // current bid
+        // Current bid
         let bid = env::attached_deposit();
         let bidder = env::predecessor_account_id();
 
-        // last bid
+        // Last bid
         let Bid {
             bidder: last_bidder,
             bid: last_bid,
@@ -101,11 +86,25 @@ impl Contract {
 
         self.claimed = true;
 
+        // Transfer tokens to the auctioneer
         Promise::new(self.auctioneer.clone()).transfer(self.highest_bid.bid);
 
+        // Transfer the NFT to the highest bidder
         nft_contract::ext(self.nft_contract.clone())
             .with_static_gas(Gas::from_tgas(30))
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .nft_transfer(self.highest_bid.bidder.clone(), self.token_id.clone());
+    }
+
+    pub fn get_highest_bid(&self) -> Bid {
+        self.highest_bid.clone()
+    }
+
+    pub fn get_auction_end_time(&self) -> U64 {
+        self.auction_end_time
+    }
+
+    pub fn get_auction_info(&self) -> &Contract {
+        self
     }
 }

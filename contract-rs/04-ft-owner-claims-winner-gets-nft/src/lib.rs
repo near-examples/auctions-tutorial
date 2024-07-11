@@ -51,35 +51,6 @@ impl Contract {
         }
     }
 
-    pub fn get_highest_bid(&self) -> Bid {
-        self.highest_bid.clone()
-    }
-
-    pub fn get_info(&self) -> &Contract {
-        self
-    }
-
-    pub fn claim(&mut self) {
-        assert!(
-            env::block_timestamp() > self.auction_end_time.into(),
-            "Auction has not ended yet"
-        );
-
-        assert!(!self.claimed, "Auction has been claimed");
-
-        self.claimed = true;
-
-        ft_contract::ext(self.ft_contract.clone())
-            .with_attached_deposit(NearToken::from_yoctonear(1))
-            .with_static_gas(Gas::from_tgas(30))
-            .ft_transfer(self.auctioneer.clone(), self.highest_bid.bid);
-
-        nft_contract::ext(self.nft_contract.clone())
-            .with_static_gas(Gas::from_tgas(30))
-            .with_attached_deposit(NearToken::from_yoctonear(1))
-            .nft_transfer(self.highest_bid.bidder.clone(), self.token_id.clone());
-    }
-
     // Users bid by transferring FT tokens
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
         require!(
@@ -90,18 +61,22 @@ impl Contract {
         let ft = env::predecessor_account_id();
         require!(ft == self.ft_contract, "The token is not supported");
 
+        // Last bid
         let Bid {
             bidder: last_bidder,
             bid: last_bid,
         } = self.highest_bid.clone();
 
-        require!(amount >= last_bid, "You must place a higher bid");
+        // Check if the deposit is higher than the current bid
+        require!(amount > last_bid, "You must place a higher bid");
 
+        // Update the highest bid
         self.highest_bid = Bid {
             bidder: sender_id,
             bid: amount,
         };
 
+        // Transfer FTs back to the last bidder
         if last_bid > U128(0) {
             ft_contract::ext(self.ft_contract.clone())
                 .with_attached_deposit(NearToken::from_yoctonear(1))
@@ -110,5 +85,40 @@ impl Contract {
         }
 
         U128(0)
+    }
+
+    pub fn claim(&mut self) {
+        require!(
+            env::block_timestamp() > self.auction_end_time.into(),
+            "Auction has not ended yet"
+        );
+
+        require!(!self.claimed, "Auction has been claimed");
+
+        self.claimed = true;
+
+        // Transfer FTs to the auctioneer
+        ft_contract::ext(self.ft_contract.clone())
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .with_static_gas(Gas::from_tgas(30))
+            .ft_transfer(self.auctioneer.clone(), self.highest_bid.bid);
+
+        // Transfer the NFT to the highest bidder
+        nft_contract::ext(self.nft_contract.clone())
+            .with_static_gas(Gas::from_tgas(30))
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .nft_transfer(self.highest_bid.bidder.clone(), self.token_id.clone());
+    }
+
+    pub fn get_highest_bid(&self) -> Bid {
+        self.highest_bid.clone()
+    }
+
+    pub fn get_auction_end_time(&self) -> U64 {
+        self.auction_end_time
+    }
+
+    pub fn get_auction_info(&self) -> &Contract {
+        self
     }
 }
