@@ -14,7 +14,7 @@ pub struct Bid {
 
 pub type TokenId = String;
 
-#[near(contract_state,serializers = [json, borsh])]
+#[near(contract_state, serializers = [json, borsh])]
 #[derive(PanicOnDefault)]
 pub struct Contract {
     highest_bid: Bid,

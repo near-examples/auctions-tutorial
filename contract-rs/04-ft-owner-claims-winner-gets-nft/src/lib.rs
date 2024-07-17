@@ -14,7 +14,7 @@ pub struct Bid {
 
 pub type TokenId = String;
 
-#[near(contract_state,serializers = [json, borsh])]
+#[near(contract_state, serializers = [json, borsh])]
 #[derive(PanicOnDefault)]
 pub struct Contract {
     highest_bid: Bid,
@@ -36,11 +36,12 @@ impl Contract {
         ft_contract: AccountId,
         nft_contract: AccountId,
         token_id: TokenId,
+        starting_price: U128,
     ) -> Self {
         Self {
             highest_bid: Bid {
                 bidder: env::current_account_id(),
-                bid: U128(0),
+                bid: starting_price,
             },
             auction_end_time: end_time,
             auctioneer,
@@ -77,7 +78,7 @@ impl Contract {
         };
 
         // Transfer FTs back to the last bidder
-        if last_bid > U128(0) {
+        if last_bidder != env::current_account_id() {
             ft_contract::ext(self.ft_contract.clone())
                 .with_attached_deposit(NearToken::from_yoctonear(1))
                 .with_static_gas(Gas::from_tgas(30))
