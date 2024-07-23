@@ -98,17 +98,19 @@ impl Contract {
 
         self.claimed = true;
 
-        // Transfer FTs to the auctioneer
-        ft_contract::ext(self.ft_contract.clone())
-            .with_attached_deposit(NearToken::from_yoctonear(1))
-            .with_static_gas(Gas::from_tgas(30))
-            .ft_transfer(self.auctioneer.clone(), self.highest_bid.bid);
+        if self.highest_bid.bidder != env::current_account_id() {
+            // Transfer FTs to the auctioneer
+            ft_contract::ext(self.ft_contract.clone())
+                .with_attached_deposit(NearToken::from_yoctonear(1))
+                .with_static_gas(Gas::from_tgas(30))
+                .ft_transfer(self.auctioneer.clone(), self.highest_bid.bid);
 
-        // Transfer the NFT to the highest bidder
-        nft_contract::ext(self.nft_contract.clone())
-            .with_static_gas(Gas::from_tgas(30))
-            .with_attached_deposit(NearToken::from_yoctonear(1))
-            .nft_transfer(self.highest_bid.bidder.clone(), self.token_id.clone());
+            // Transfer the NFT to the highest bidder
+            nft_contract::ext(self.nft_contract.clone())
+                .with_static_gas(Gas::from_tgas(30))
+                .with_attached_deposit(NearToken::from_yoctonear(1))
+                .nft_transfer(self.highest_bid.bidder.clone(), self.token_id.clone());
+        }
     }
 
     pub fn get_highest_bid(&self) -> Bid {

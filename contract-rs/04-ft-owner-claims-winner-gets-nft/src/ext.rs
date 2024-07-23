@@ -7,7 +7,7 @@ use crate::TokenId;
 // FT interface for cross-contract calls
 #[ext_contract(ft_contract)]
 trait FT {
-    fn ft_transfer(&self, receiver_id: AccountId, amount: U128) -> String;
+    fn ft_transfer(&self, receiver_id: AccountId, amount: U128);
 }
 
 // NFT interface for cross-contract calls
