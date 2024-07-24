@@ -60,13 +60,13 @@ test.beforeEach(async (t) => {
   await contract.deploy(process.argv[2]);
 
   // Initialize contract, finishes in 1 minute
- 
   await contract.call(contract, "init", {
     end_time: String((Date.now() + 60000) * 10 ** 6),
     auctioneer: auctioneer.accountId,
     ft_contract: ft_contract.accountId,
     nft_contract: nft_contract.accountId,
-    token_id: token_id
+    token_id: token_id,
+    starting_price: BigInt(10_000).toString()
   });
 
   // Save state for test runs, it is unique for each test

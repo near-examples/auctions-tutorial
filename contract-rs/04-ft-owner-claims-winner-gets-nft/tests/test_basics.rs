@@ -75,11 +75,12 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let now = Utc::now().timestamp();
     let a_minute_from_now = (now + 60) * 1000000000;
     log!("a_minute_from_now: {}", a_minute_from_now);
+    let starting_price = U128(10_000);
 
     let init: ExecutionFinalResult = contract
         .call("init")
         .args_json(
-            json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"ft_contract": ft_contract.id(),"nft_contract":nft_contract.id(),"token_id":"1" }),
+            json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"ft_contract": ft_contract.id(),"nft_contract":nft_contract.id(),"token_id":"1", "starting_price":starting_price }),
         )
         .transact()
         .await?;

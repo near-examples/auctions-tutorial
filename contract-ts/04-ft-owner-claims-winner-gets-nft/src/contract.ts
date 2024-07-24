@@ -20,9 +20,9 @@ class AuctionContract {
   token_id: string = "";
 
   @initialize({ privateFunction: true })
-  init({ end_time, auctioneer, ft_contract, nft_contract, token_id }: { end_time: bigint, auctioneer: string, ft_contract: AccountId, nft_contract: AccountId, token_id: string }) {
+  init({ end_time, auctioneer, ft_contract, nft_contract, token_id, starting_price }: { end_time: bigint, auctioneer: string, ft_contract: AccountId, nft_contract: AccountId, token_id: string, starting_price: bigint }) {
     this.auction_end_time = end_time;
-    this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(0) };
+    this.highest_bid = { bidder: near.currentAccountId(), bid: starting_price };
     this.auctioneer = auctioneer;
     this.ft_contract = ft_contract;
     this.nft_contract = nft_contract;
@@ -67,7 +67,7 @@ class AuctionContract {
       bid: amount,
     };
 
-    if (previous.bid > 0) {
+    if (previous.bidder != near.currentAccountId()) {
       near.log("inside bid");
       // this.ft_transfer(this.highest_bid.bidder, this.highest_bid.bid)
       return NearPromise.new(this.ft_contract)
