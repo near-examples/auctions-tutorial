@@ -38,43 +38,38 @@ test.afterEach.always(async (t) => {
   });
 });
 
-test("Bids are placed", async (t) => {
-  const { alice, contract } = t.context.accounts;
-
-  await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
-
-  const highest_bid = await contract.view("get_highest_bid", {});
-
-  t.is(highest_bid.bidder, alice.accountId);
-  t.is(highest_bid.bid, NEAR.parse("1 N").toString());
-});
-
-test("Outbid returns previous bid", async (t) => {
+test("Test full contract", async (t) => {
   const { alice, bob, contract } = t.context.accounts;
 
+  // Alice makes first bid
   await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
+  let highest_bid = await contract.view("get_highest_bid", {});
+  t.is(highest_bid.bidder, alice.accountId);
+  t.is(highest_bid.bid, NEAR.parse("1 N").toString());
   const aliceBalance = await alice.balance();
 
+  // Bob makes a higher bid
   await bob.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("2 N").toString() });
-  const highest_bid = await contract.view("get_highest_bid", {});
+  highest_bid = await contract.view("get_highest_bid", {});
   t.is(highest_bid.bidder, bob.accountId);
   t.is(highest_bid.bid, NEAR.parse("2 N").toString());
 
-  // we returned the money to alice
+  // Check that alice was returned her bid
   const aliceNewBalance = await alice.balance();
   t.deepEqual(aliceNewBalance.available, aliceBalance.available.add(NEAR.parse("1 N")));
-});
 
-test("Auction closes", async (t) => {
-  const { alice, contract } = t.context.accounts;
-
-  // alice can bid
-  await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
-
-  // fast forward approx a minute
-  await t.context.worker.provider.fastForward(60)
-
-  // alice cannot bid anymore
+  // Alice tires to make a bid with less NEAR than the previous 
   await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }))
-});
+  highest_bid = await contract.view("get_highest_bid", {});
+  t.is(highest_bid.bidder, bob.accountId);
+  t.is(highest_bid.bid, NEAR.parse("2 N").toString());
 
+  // fast forward approx two minutes
+  await t.context.worker.provider.fastForward(120)
+
+  // Alice tries to make a bid when the auction is over
+  await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }))
+  highest_bid = await contract.view("get_highest_bid", {});
+  t.is(highest_bid.bidder, bob.accountId);
+  t.is(highest_bid.bid, NEAR.parse("2 N").toString());
+});

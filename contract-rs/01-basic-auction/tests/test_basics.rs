@@ -1,9 +1,9 @@
 use chrono::Utc;
 use contract_rs::Bid;
-use near_sdk::{log, NearToken};
+use near_sdk::NearToken;
 use serde_json::json;
 
-const FIVE_NEAR: NearToken = NearToken::from_near(5);
+const FIFTY_NEAR: NearToken = NearToken::from_near(50);
 
 #[tokio::test]
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
@@ -12,33 +12,16 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let root = sandbox.root_account()?;
 
-    let alice = root
-        .create_subaccount("alice")
-        .initial_balance(FIVE_NEAR)
-        .transact()
-        .await?
-        .unwrap();
-
-    let bob = root
-        .create_subaccount("bob")
-        .initial_balance(FIVE_NEAR)
-        .transact()
-        .await?
-        .unwrap();
-
-    let contract_account = root
-        .create_subaccount("contract")
-        .initial_balance(FIVE_NEAR)
-        .transact()
-        .await?
-        .unwrap();
+    // Create accounts
+    let alice = create_subaccount(&root, "alice").await?;
+    let bob = create_subaccount(&root, "bob").await?;
+    let contract_account = create_subaccount(&root, "contract").await?;
 
     // Deploy and initialize contract
     let contract = contract_account.deploy(&contract_wasm).await?.unwrap();
 
     let now = Utc::now().timestamp();
     let a_minute_from_now = (now + 60) * 1000000000;
-    log!("a_minute_from_now: {}", a_minute_from_now);
 
     let init = contract
         .call("init")
@@ -59,11 +42,10 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let highest_bid_json = contract.view("get_highest_bid").await?;
     let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
-
     assert_eq!(highest_bid.bid, NearToken::from_near(1));
     assert_eq!(highest_bid.bidder, *alice.id());
 
-    // Bob makes second bid
+    // Bob makes a higher bid
     let bob_bid = bob
         .call(contract.id(), "bid")
         .deposit(NearToken::from_near(2))
@@ -74,11 +56,15 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let highest_bid_json = contract.view("get_highest_bid").await?;
     let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
-
     assert_eq!(highest_bid.bid, NearToken::from_near(2));
     assert_eq!(highest_bid.bidder, *bob.id());
 
-    // Alice makes the third bid but fails
+    // Check that alice was returned her bid
+    let alice_balance = alice.view_account().await?.balance;
+    assert!(alice_balance <= NearToken::from_near(50));
+    assert!(alice_balance > NearToken::from_millinear(49900));
+
+    // Alice tries to make a bid with less NEAR than the previous
     let alice_bid = alice
         .call(contract.id(), "bid")
         .deposit(NearToken::from_near(1))
@@ -89,9 +75,41 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let highest_bid_json = contract.view("get_highest_bid").await?;
     let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
+    assert_eq!(highest_bid.bid, NearToken::from_near(2));
+    assert_eq!(highest_bid.bidder, *bob.id());
 
+    // Fast forward
+    // ~0.3 seconds * 400 = 120 seconds = 2 minutes
+    let blocks_to_advance = 400;
+    sandbox.fast_forward(blocks_to_advance).await?;
+
+    // Alice tries to make a bid when the auction is over
+    let alice_bid = alice
+        .call(contract.id(), "bid")
+        .deposit(NearToken::from_near(3))
+        .transact()
+        .await?;
+
+    assert!(alice_bid.is_failure());
+
+    let highest_bid_json = contract.view("get_highest_bid").await?;
+    let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
     assert_eq!(highest_bid.bid, NearToken::from_near(2));
     assert_eq!(highest_bid.bidder, *bob.id());
 
     Ok(())
+}
+
+async fn create_subaccount(
+    root: &near_workspaces::Account,
+    name: &str,
+) -> Result<near_workspaces::Account, Box<dyn std::error::Error>> {
+    let subaccount = root
+        .create_subaccount(name)
+        .initial_balance(FIFTY_NEAR)
+        .transact()
+        .await?
+        .unwrap();
+
+    Ok(subaccount)
 }

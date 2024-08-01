@@ -1,6 +1,6 @@
 // Find all our documentation at https://docs.near.org
 use near_sdk::json_types::{U128, U64};
-use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault};
+use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault, log};
 
 pub mod ext;
 pub use crate::ext::*;
@@ -69,7 +69,10 @@ impl Contract {
         } = self.highest_bid.clone();
 
         // Check if the deposit is higher than the current bid
-        require!(amount > last_bid, "You must place a higher bid");
+        if amount <= last_bid {
+            log!("You must place a higher bid");
+            return amount
+        };
 
         // Update the highest bid
         self.highest_bid = Bid {
@@ -123,5 +126,40 @@ impl Contract {
 
     pub fn get_auction_info(&self) -> &Contract {
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn init_contract() {
+        let end_time: U64 = U64::from(1000);
+        let alice: AccountId = "alice.near".parse().unwrap();
+        let ft_contract: AccountId = "ft.near".parse().unwrap();
+        let nft_contract: AccountId = "nft.near".parse().unwrap();
+        let token_id: TokenId = "1".to_string();
+        let starting_price: U128 = U128(100);
+        let contract = Contract::init(
+            end_time.clone(),
+            alice.clone(),
+            ft_contract.clone(),
+            nft_contract.clone(),
+            token_id.clone(),
+            starting_price.clone(),
+        );
+
+        let default_bid = contract.get_highest_bid();
+        assert_eq!(default_bid.bidder, env::current_account_id());
+        assert_eq!(default_bid.bid, starting_price);
+
+        let auction_info = contract.get_auction_info();
+        assert_eq!(auction_info.auction_end_time, end_time);
+        assert_eq!(auction_info.auctioneer, alice);
+        assert_eq!(auction_info.ft_contract, ft_contract);
+        assert_eq!(auction_info.nft_contract, nft_contract);
+        assert_eq!(auction_info.token_id, token_id);
+        assert_eq!(auction_info.claimed, false);
     }
 }
