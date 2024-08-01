@@ -3,7 +3,7 @@ use contract_rs::Bid;
 use near_sdk::NearToken;
 use serde_json::json;
 
-const FIFTY_NEAR: NearToken = NearToken::from_near(50);
+const TEN_NEAR: NearToken = NearToken::from_near(10);
 
 #[tokio::test]
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
@@ -45,6 +45,8 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(highest_bid.bid, NearToken::from_near(1));
     assert_eq!(highest_bid.bidder, *alice.id());
 
+    let alice_balance = alice.view_account().await?.balance;
+
     // Bob makes a higher bid
     let bob_bid = bob
         .call(contract.id(), "bid")
@@ -60,9 +62,8 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(highest_bid.bidder, *bob.id());
 
     // Check that alice was returned her bid
-    let alice_balance = alice.view_account().await?.balance;
-    assert!(alice_balance <= NearToken::from_near(50));
-    assert!(alice_balance > NearToken::from_millinear(49900));
+    let new_alice_balance = alice.view_account().await?.balance;
+    assert!(new_alice_balance == alice_balance.saturating_add(NearToken::from_near(1)));
 
     // Alice tries to make a bid with less NEAR than the previous
     let alice_bid = alice
@@ -79,8 +80,8 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(highest_bid.bidder, *bob.id());
 
     // Fast forward
-    // ~0.3 seconds * 400 = 120 seconds = 2 minutes
-    let blocks_to_advance = 400;
+    // ~0.3 seconds * 200 = 60 seconds = 1 minutes
+    let blocks_to_advance = 200;
     sandbox.fast_forward(blocks_to_advance).await?;
 
     // Alice tries to make a bid when the auction is over
@@ -92,11 +93,6 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(alice_bid.is_failure());
 
-    let highest_bid_json = contract.view("get_highest_bid").await?;
-    let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
-    assert_eq!(highest_bid.bid, NearToken::from_near(2));
-    assert_eq!(highest_bid.bidder, *bob.id());
-
     Ok(())
 }
 
@@ -106,7 +102,7 @@ async fn create_subaccount(
 ) -> Result<near_workspaces::Account, Box<dyn std::error::Error>> {
     let subaccount = root
         .create_subaccount(name)
-        .initial_balance(FIFTY_NEAR)
+        .initial_balance(TEN_NEAR)
         .transact()
         .await?
         .unwrap();

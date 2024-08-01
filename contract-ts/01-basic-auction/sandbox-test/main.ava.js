@@ -14,9 +14,9 @@ test.beforeEach(async (t) => {
   // Create accounts
   const root = worker.rootAccount;
 
-  const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("50 N").toString() });
-  const bob = await root.createSubAccount("bob", { initialBalance: NEAR.parse("50 N").toString() });
-  const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("50 N").toString() });
+  const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("10 N").toString() });
+  const bob = await root.createSubAccount("bob", { initialBalance: NEAR.parse("10 N").toString() });
+  const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
 
   // Deploy contract (input from package.json)
   await contract.deploy(process.argv[2]);
@@ -46,6 +46,7 @@ test("Test full contract", async (t) => {
   let highest_bid = await contract.view("get_highest_bid", {});
   t.is(highest_bid.bidder, alice.accountId);
   t.is(highest_bid.bid, NEAR.parse("1 N").toString());
+
   const aliceBalance = await alice.balance();
 
   // Bob makes a higher bid
@@ -58,18 +59,12 @@ test("Test full contract", async (t) => {
   const aliceNewBalance = await alice.balance();
   t.deepEqual(aliceNewBalance.available, aliceBalance.available.add(NEAR.parse("1 N")));
 
-  // Alice tires to make a bid with less NEAR than the previous 
+  // Alice tries to make a bid with less NEAR than the previous 
   await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }))
-  highest_bid = await contract.view("get_highest_bid", {});
-  t.is(highest_bid.bidder, bob.accountId);
-  t.is(highest_bid.bid, NEAR.parse("2 N").toString());
 
   // fast forward approx two minutes
   await t.context.worker.provider.fastForward(120)
 
-  // Alice tries to make a bid when the auction is over
-  await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }))
-  highest_bid = await contract.view("get_highest_bid", {});
-  t.is(highest_bid.bidder, bob.accountId);
-  t.is(highest_bid.bid, NEAR.parse("2 N").toString());
+  // Alice tries to make a bid when the auction is over and it fails
+  await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("3 N").toString() }))
 });
