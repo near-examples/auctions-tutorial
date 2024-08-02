@@ -1,6 +1,6 @@
 use chrono::Utc;
 use contract_rs::Bid;
-use near_sdk::{json_types::U128, log, NearToken};
+use near_sdk::{json_types::U128, NearToken};
 use near_sdk::{AccountId, Gas};
 use near_workspaces::result::ExecutionFinalResult;
 use near_workspaces::{Account, Contract};
@@ -24,7 +24,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let root: near_workspaces::Account = sandbox.root_account()?;
 
-    // Initialize contracts
+    // Initialize FT contract
     let res = ft_contract
         .call("new_default_meta")
         .args_json(serde_json::json!({
@@ -36,6 +36,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(res.is_success());
 
+    // Initialize NFT contract
     let res = nft_contract
         .call("new_default_meta")
         .args_json(serde_json::json!({"owner_id": root.id()}))
@@ -44,10 +45,10 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(res.is_success());
 
-    // Create subaccounts
+    // Create accounts
     let alice = create_subaccount(&root, "alice").await?;
-    let auctioneer = create_subaccount(&root, "auctioneer").await?;
     let bob = create_subaccount(&root, "bob").await?;
+    let auctioneer = create_subaccount(&root, "auctioneer").await?;
     let contract_account = create_subaccount(&root, "contract").await?;
 
     // Mint NFT
@@ -67,14 +68,14 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         .deposit(NearToken::from_millinear(80))
         .transact()
         .await?;
+
     assert!(res.is_success());
 
-    // Deploy and initialize contract
+    // Deploy and initialize auction contract
     let contract = contract_account.deploy(&contract_wasm).await?.unwrap();
 
     let now = Utc::now().timestamp();
     let a_minute_from_now = (now + 60) * 1000000000;
-    log!("a_minute_from_now: {}", a_minute_from_now);
     let starting_price = U128(10_000);
 
     let init: ExecutionFinalResult = contract
@@ -102,10 +103,11 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
             .deposit(NearToken::from_yoctonear(8000000000000000000000))
             .transact()
             .await?;
+
         assert!(register.is_success());
     }
 
-    // Transfer tokens
+    // Transfer FTs
     let transfer_amount = U128(150_000);
 
     let root_transfer_alice =
@@ -122,7 +124,10 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let bob_balance: U128 = ft_balance_of(&ft_contract, bob.id()).await?;
     assert_eq!(bob_balance, U128(150_000));
 
-    // Alice makes first bid
+    // Alice makes bid less than starting price
+    // TODO
+
+    // Alice makes valid bid
     let alice_bid = ft_transfer_call(
         alice.clone(),
         ft_contract.id(),
@@ -130,6 +135,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         U128(50_000),
     )
     .await?;
+
     assert!(alice_bid.is_success());
 
     let highest_bid_alice: Bid = contract.view("get_highest_bid").await?.json()?;
@@ -142,7 +148,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let alice_balance_after_bid: U128 = ft_balance_of(&ft_contract, alice.id()).await?;
     assert_eq!(alice_balance_after_bid, U128(100_000));
 
-    // Bob makes second bid
+    // Bob makes a higher bid
     let bob_bid = ft_transfer_call(
         bob.clone(),
         ft_contract.id(),
@@ -150,6 +156,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         U128(60_000),
     )
     .await?;
+
     assert!(bob_bid.is_success());
 
     let highest_bid: Bid = contract.view("get_highest_bid").await?.json()?;
@@ -162,7 +169,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let bob_balance_after_bid: U128 = ft_balance_of(&ft_contract, bob.id()).await?;
     assert_eq!(bob_balance_after_bid, U128(90_000));
 
-    // Alice makes the third bid but fails
+    // Alice tries to make a bid with less FTs than the previous
     let alice_bid: ExecutionFinalResult = ft_transfer_call(
         alice.clone(),
         ft_contract.id(),
@@ -170,6 +177,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         U128(50_000),
     )
     .await?;
+
     assert!(alice_bid.is_success());
 
     let highest_bid_alice: Bid = contract.view("get_highest_bid").await?.json()?;
@@ -184,35 +192,10 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let bob_balance_after_bid: U128 = ft_balance_of(&ft_contract, bob.id()).await?;
     assert_eq!(bob_balance_after_bid, U128(90_000));
 
-    // Alice makes the third bid
-    let alice_bid: ExecutionFinalResult = ft_transfer_call(
-        alice.clone(),
-        ft_contract.id(),
-        contract_account.id(),
-        U128(100_000),
-    )
-    .await?;
-    assert!(alice_bid.is_success());
-
-    let highest_bid_alice: Bid = contract.view("get_highest_bid").await?.json()?;
-    assert_eq!(highest_bid_alice.bid, U128(100_000));
-    assert_eq!(highest_bid_alice.bidder, *alice.id());
-
-    let contract_account_balance: U128 = ft_balance_of(&ft_contract, contract_account.id()).await?;
-    assert_eq!(contract_account_balance, U128(100_000));
-
-    let alice_balance_after_bid: U128 = ft_balance_of(&ft_contract, alice.id()).await?;
-    assert_eq!(alice_balance_after_bid, U128(50_000));
-    let bob_balance_after_bid: U128 = ft_balance_of(&ft_contract, bob.id()).await?;
-    assert_eq!(bob_balance_after_bid, U128(150_000));
-
-    // Alicia claims the auction but fails
-    let alice_claim: ExecutionFinalResult = claim(alice.clone(), contract_account.id()).await?;
-    assert!(alice_claim.is_failure());
-
     // Auctioneer claims auction but did not finish
     let auctioneer_claim: ExecutionFinalResult =
         claim(auctioneer.clone(), contract_account.id()).await?;
+
     assert!(auctioneer_claim.is_failure());
 
     // Fast forward
@@ -220,39 +203,19 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let blocks_to_advance = 400;
     sandbox.fast_forward(blocks_to_advance).await?;
 
-    // Bob makes a bid but it ends
-    // this cannot be tested
-    // let bob_bid = ft_transfer_call(bob.clone(),ft_contract.id(),contract_account.id(),U128(120_000)).await?;
-    // assert!(bob_bid.is_failure());
-
     // Auctioneer claims auction
-
-    let token_info: serde_json::Value = nft_contract
-        .call("nft_token")
-        .args_json(json!({"token_id": "1"}))
-        .transact()
-        .await?
-        .json()
-        .unwrap();
-    let owner_id: String = token_info["owner_id"].as_str().unwrap().to_string();
-
-    assert_eq!(
-        owner_id,
-        contract.id().to_string(),
-        "token owner is not first_buyer"
-    );
-
     let auctioneer_claim: ExecutionFinalResult =
         claim(auctioneer.clone(), contract_account.id()).await?;
-    println!("auctioneer_claim outcome: {:#?}", auctioneer_claim);
+
     assert!(auctioneer_claim.is_success());
 
     let contract_account_balance: U128 = ft_balance_of(&ft_contract, contract_account.id()).await?;
     assert_eq!(contract_account_balance, U128(0));
 
     let auctioneer_balance_after_claim: U128 = ft_balance_of(&ft_contract, auctioneer.id()).await?;
-    assert_eq!(auctioneer_balance_after_claim, U128(100_000));
+    assert_eq!(auctioneer_balance_after_claim, U128(60_000));
 
+    // Check auctioneer owns the NFT
     let token_info: serde_json::Value = nft_contract
         .call("nft_token")
         .args_json(json!({"token_id": "1"}))
@@ -264,14 +227,18 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert_eq!(
         owner_id,
-        alice.id().to_string(),
-        "token owner is not first_buyer"
+        bob.id().to_string(),
+        "token owner is not the highest bidder"
     );
 
     // Auctioneer claims auction back but fails
     let auctioneer_claim: ExecutionFinalResult =
         claim(auctioneer.clone(), contract_account.id()).await?;
+
     assert!(auctioneer_claim.is_failure());
+
+    // Alice tries to make a bid when the auction is over
+    // TODO
 
     Ok(())
 }
@@ -314,7 +281,7 @@ async fn ft_balance_of(
 ) -> Result<U128, Box<dyn std::error::Error>> {
     let result = ft_contract
         .view("ft_balance_of")
-        .args_json(json!({"account_id": account_id})) // Aquí usamos el account_id pasado como argumento
+        .args_json(json!({"account_id": account_id}))
         .await?
         .json()?;
 

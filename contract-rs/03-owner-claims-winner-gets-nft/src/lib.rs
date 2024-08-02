@@ -110,3 +110,33 @@ impl Contract {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn init_contract() {
+        let end_time: U64 = U64::from(1000);
+        let alice: AccountId = "alice.near".parse().unwrap();
+        let nft_contract: AccountId = "nft.near".parse().unwrap();
+        let token_id: TokenId = "1".to_string();
+        let contract = Contract::init(
+            end_time.clone(),
+            alice.clone(),
+            nft_contract.clone(),
+            token_id.clone(),
+        );
+
+        let default_bid = contract.get_highest_bid();
+        assert_eq!(default_bid.bidder, env::current_account_id());
+        assert_eq!(default_bid.bid, NearToken::from_yoctonear(1));
+
+        let auction_info = contract.get_auction_info();
+        assert_eq!(auction_info.auction_end_time, end_time);
+        assert_eq!(auction_info.auctioneer, alice);
+        assert_eq!(auction_info.nft_contract, nft_contract);
+        assert_eq!(auction_info.token_id, token_id);
+        assert_eq!(auction_info.claimed, false);
+    }
+}
