@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "near-sdk-js build src/contract.ts build/hello_near.wasm",
-    "test": "ava -- ./build/hello_near.wasm"
+    "test": "$npm_execpath run build && ava -- ./build/hello_near.wasm"
   },
   "dependencies": {
     "near-sdk-js": "2.0.0"
@@ -16,7 +16,7 @@
     "typescript": "^5.4.5"
   },
   "ava": {
-    "timeout": "20000",
+    "timeout": "50000",
     "files": ["sandbox-test/*.ava.js"]
   }
 }

@@ -1,6 +1,6 @@
 // Find all our documentation at https://docs.near.org
 use near_sdk::json_types::{U128, U64};
-use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault, log};
+use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault};
 
 pub mod ext;
 pub use crate::ext::*;
@@ -69,10 +69,7 @@ impl Contract {
         } = self.highest_bid.clone();
 
         // Check if the deposit is higher than the current bid
-        if amount <= last_bid {
-            log!("You must place a higher bid");
-            return amount
-        };
+        require!(amount > last_bid, "You must place a higher bid");
 
         // Update the highest bid
         self.highest_bid = Bid {

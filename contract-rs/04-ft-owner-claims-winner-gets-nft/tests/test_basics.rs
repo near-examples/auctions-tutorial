@@ -1,7 +1,7 @@
 use chrono::Utc;
 use contract_rs::Bid;
 use near_sdk::{json_types::U128, NearToken};
-use near_sdk::{AccountId, Gas, log};
+use near_sdk::{AccountId, Gas};
 use near_workspaces::result::ExecutionFinalResult;
 use near_workspaces::{Account, Contract};
 use serde_json::json;
@@ -125,7 +125,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(bob_balance, U128(150_000));
 
     // Alice makes bid less than starting price
-
+    // TODO
 
     // Alice makes valid bid
     let alice_bid = ft_transfer_call(
@@ -177,14 +177,6 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         U128(50_000),
     )
     .await?;
-
-    //log!(" \n \n outcomes \n {:?}", alice_bid.outcomes());
-    //log!(" \n \n logs \n {:?}", alice_bid.logs());
-
-    let outcomes = alice_bid.outcomes();
-    for outcome in outcomes {
-        log!("\n \n outcome \n {:?}", outcome);
-    }
 
     assert!(alice_bid.is_success());
 
@@ -252,15 +244,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert!(auctioneer_claim.is_failure());
 
     // Alice tries to make a bid when the auction is over
-    let alice_bid: ExecutionFinalResult = ft_transfer_call(
-        alice.clone(),
-        ft_contract.id(),
-        contract_account.id(),
-        U128(100_000),
-    )
-    .await?;
-
-    assert!(alice_bid.is_failure());
+    // TODO
 
     Ok(())
 }

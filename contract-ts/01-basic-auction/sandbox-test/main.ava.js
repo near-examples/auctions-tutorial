@@ -62,9 +62,9 @@ test("Test full contract", async (t) => {
   // Alice tries to make a bid with less NEAR than the previous 
   await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }))
 
-  // fast forward approx two minutes
-  await t.context.worker.provider.fastForward(120)
+  // Fast forward 200 blocks
+  await t.context.worker.provider.fastForward(200)
 
-  // Alice tries to make a bid when the auction is over and it fails
+  // Alice tries to make a bid when the auction is over
   await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("3 N").toString() }))
 });

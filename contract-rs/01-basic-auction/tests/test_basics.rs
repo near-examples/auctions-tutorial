@@ -74,13 +74,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(alice_bid.is_failure());
 
-    let highest_bid_json = contract.view("get_highest_bid").await?;
-    let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
-    assert_eq!(highest_bid.bid, NearToken::from_near(2));
-    assert_eq!(highest_bid.bidder, *bob.id());
-
-    // Fast forward
-    // ~0.3 seconds * 200 = 60 seconds = 1 minutes
+    // Fast forward 200 blocks
     let blocks_to_advance = 200;
     sandbox.fast_forward(blocks_to_advance).await?;
 

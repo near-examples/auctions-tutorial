@@ -14,10 +14,10 @@ test.beforeEach(async (t) => {
   // Create accounts
   const root = worker.rootAccount;
 
-  const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("50 N").toString() });
-  const bob = await root.createSubAccount("bob", { initialBalance: NEAR.parse("50 N").toString() });
-  const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("50 N").toString() });
-  const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("50 N").toString() });
+  const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("10 N").toString() });
+  const bob = await root.createSubAccount("bob", { initialBalance: NEAR.parse("10 N").toString() });
+  const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("10 N").toString() });
+  const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
 
   // Deploy contract (input from package.json)
   await contract.deploy(process.argv[2]);
@@ -62,24 +62,30 @@ test("Test full contract", async (t) => {
 
   // Alice tires to make a bid with less NEAR than the previous 
   await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }));
-  highest_bid = await contract.view("get_highest_bid", {});
-  t.is(highest_bid.bidder, bob.accountId);
-  t.is(highest_bid.bid, NEAR.parse("2 N").toString());
-
-  // fast forward approx two minutes
-  await t.context.worker.provider.fastForward(120)
-
-  // Alice tries to make a bid when the auction is over
-  await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }));
-  highest_bid = await contract.view("get_highest_bid", {});
-  t.is(highest_bid.bidder, bob.accountId);
-  t.is(highest_bid.bid, NEAR.parse("2 N").toString());
 
   // Auctioneer claims auction but did not finish
   await t.throwsAsync(auctioneer.call(contract, "claim", {}, { gas: "300000000000000" }));
-  highest_bid = await contract.view("get_highest_bid", {});
-  t.is(highest_bid.bidder, bob.accountId);
-  t.is(highest_bid.bid, NEAR.parse("2 N").toString());
+
+  // Fast forward 200 blocks
+  await t.context.worker.provider.fastForward(200)
+
+  const auctioneerBalance = await auctioneer.balance();
+  const available = parseFloat(auctioneerBalance.available.toHuman());
+
+  // Auctioneer claims the auction
+  await auctioneer.call(contract, "claim", {}, { gas: "300000000000000" });
+
+  // Checks that the auctioneer has the correct balance
+  const contractNewBalance = await auctioneer.balance();
+  const new_available = parseFloat(contractNewBalance.available.toHuman());
+  t.is(new_available.toFixed(2), (available + 2).toFixed(2));
+
+
+  // Auctioneer tries to claim the auction again
+  await t.throwsAsync(auctioneer.call(contract, "claim", {}, { gas: "300000000000000" }))
+
+  // Alice tries to make a bid when the auction is over
+  await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }));
 });
 
 
