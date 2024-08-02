@@ -62,7 +62,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(highest_bid.bid, NearToken::from_near(2));
     assert_eq!(highest_bid.bidder, *bob.id());
 
-    // Check that Alice was returned her bid 
+    // Check that Alice was returned her bid
     let new_alice_balance = alice.view_account().await?.balance;
     assert!(new_alice_balance == alice_balance.saturating_add(NearToken::from_near(1)));
 
@@ -82,7 +82,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         .gas(Gas::from_tgas(300))
         .transact()
         .await?;
-    
+
     assert!(auctioneer_claim.is_failure());
 
     // Fast forward 200 blocks

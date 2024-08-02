@@ -193,11 +193,8 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(bob_balance_after_bid, U128(90_000));
 
     // Auctioneer claims auction but did not finish
-    let auctioneer_claim: ExecutionFinalResult = claim(
-        auctioneer.clone(), 
-        contract_account.id()
-    )
-    .await?;
+    let auctioneer_claim: ExecutionFinalResult =
+        claim(auctioneer.clone(), contract_account.id()).await?;
 
     assert!(auctioneer_claim.is_failure());
 
@@ -207,11 +204,8 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     sandbox.fast_forward(blocks_to_advance).await?;
 
     // Auctioneer claims auction
-    let auctioneer_claim: ExecutionFinalResult = claim(
-        auctioneer.clone(), 
-        contract_account.id()
-    )
-    .await?;
+    let auctioneer_claim: ExecutionFinalResult =
+        claim(auctioneer.clone(), contract_account.id()).await?;
 
     assert!(auctioneer_claim.is_success());
 
