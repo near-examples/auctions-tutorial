@@ -17,9 +17,9 @@ test.beforeEach(async (t) => {
 
   const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("10 N").toString() });
   const bob = await root.createSubAccount("bob", { initialBalance: NEAR.parse("10 N").toString() });
+  const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("10 N").toString() });
   const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
   const nft_contract = await root.createSubAccount("nft_contract", { initialBalance: NEAR.parse("20 N").toString() });
-  const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("10 N").toString() });
 
   // Deploy contract nft 
   await nft_contract.deploy(NFT_WASM_FILEPATH);
