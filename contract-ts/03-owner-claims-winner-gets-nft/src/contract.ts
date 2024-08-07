@@ -65,10 +65,8 @@ class AuctionContract {
     assert(!this.claimed, "Auction has been claimed");
     this.claimed = true;
 
-    if (this.highest_bid.bidder != near.currentAccountId()) {
-      return NearPromise.new(this.nft_contract)
-        .functionCall("nft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }), BigInt(1), TWENTY_TGAS)
-        .then(NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid))
-    }
+    return NearPromise.new(this.nft_contract)
+      .functionCall("nft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }), BigInt(1), TWENTY_TGAS)
+      .then(NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid))
   }
 }
