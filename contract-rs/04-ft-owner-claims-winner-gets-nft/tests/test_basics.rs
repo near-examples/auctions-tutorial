@@ -6,7 +6,7 @@ use near_workspaces::result::ExecutionFinalResult;
 use near_workspaces::{Account, Contract};
 use serde_json::json;
 
-const FIVE_NEAR: NearToken = NearToken::from_near(5);
+const TEN_NEAR: NearToken = NearToken::from_near(10);
 const FT_WASM_FILEPATH: &str = "./tests/fungible_token.wasm";
 const NFT_WASM_FILEPATH: &str = "./tests/non_fungible_token.wasm";
 
@@ -14,7 +14,6 @@ const NFT_WASM_FILEPATH: &str = "./tests/non_fungible_token.wasm";
 
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
     let sandbox = near_workspaces::sandbox().await?;
-    let contract_wasm = near_workspaces::compile_project("./").await?;
 
     let ft_wasm = std::fs::read(FT_WASM_FILEPATH)?;
     let ft_contract = sandbox.dev_deploy(&ft_wasm).await?;
@@ -72,6 +71,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert!(res.is_success());
 
     // Deploy and initialize auction contract
+    let contract_wasm = near_workspaces::compile_project("./").await?;
     let contract = contract_account.deploy(&contract_wasm).await?.unwrap();
 
     let now = Utc::now().timestamp();
@@ -125,7 +125,25 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(bob_balance, U128(150_000));
 
     // Alice makes bid less than starting price
-    // TODO
+    let alice_bid = ft_transfer_call(
+        alice.clone(),
+        ft_contract.id(),
+        contract_account.id(),
+        U128(5_000),
+    )
+    .await?;
+
+    assert!(alice_bid.is_success());
+
+    let highest_bid_alice: Bid = contract.view("get_highest_bid").await?.json()?;
+    assert_eq!(highest_bid_alice.bid, U128(10_000));
+    assert_eq!(highest_bid_alice.bidder, *contract.id());
+
+    let contract_account_balance: U128 = ft_balance_of(&ft_contract, contract_account.id()).await?;
+    assert_eq!(contract_account_balance, U128(0));
+
+    let alice_balance_after_bid: U128 = ft_balance_of(&ft_contract, alice.id()).await?;
+    assert_eq!(alice_balance_after_bid, U128(150_000));
 
     // Alice makes valid bid
     let alice_bid = ft_transfer_call(
@@ -164,6 +182,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(highest_bid.bid, U128(60_000));
     assert_eq!(highest_bid.bidder, *bob.id());
 
+    // Checks Alice was returned her bid
     let alice_balance_after_bid: U128 = ft_balance_of(&ft_contract, alice.id()).await?;
     assert_eq!(alice_balance_after_bid, U128(150_000));
     let bob_balance_after_bid: U128 = ft_balance_of(&ft_contract, bob.id()).await?;
@@ -189,8 +208,6 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let alice_balance_after_bid: U128 = ft_balance_of(&ft_contract, alice.id()).await?;
     assert_eq!(alice_balance_after_bid, U128(150_000));
-    let bob_balance_after_bid: U128 = ft_balance_of(&ft_contract, bob.id()).await?;
-    assert_eq!(bob_balance_after_bid, U128(90_000));
 
     // Auctioneer claims auction but did not finish
     let auctioneer_claim: ExecutionFinalResult =
@@ -198,9 +215,8 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(auctioneer_claim.is_failure());
 
-    // Fast forward
-    // ~0.3 seconds * 400 = 120 seconds = 2 minutes
-    let blocks_to_advance = 400;
+    // Fast forward 200 blocks
+    let blocks_to_advance = 200;
     sandbox.fast_forward(blocks_to_advance).await?;
 
     // Auctioneer claims auction
@@ -215,7 +231,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let auctioneer_balance_after_claim: U128 = ft_balance_of(&ft_contract, auctioneer.id()).await?;
     assert_eq!(auctioneer_balance_after_claim, U128(60_000));
 
-    // Check auctioneer owns the NFT
+    // Check highest bidder received the NFT
     let token_info: serde_json::Value = nft_contract
         .call("nft_token")
         .args_json(json!({"token_id": "1"}))
@@ -238,7 +254,27 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert!(auctioneer_claim.is_failure());
 
     // Alice tries to make a bid when the auction is over
-    // TODO
+    let alice_bid: ExecutionFinalResult = ft_transfer_call(
+        alice.clone(),
+        ft_contract.id(),
+        contract_account.id(),
+        U128(70_000),
+    )
+    .await?;
+
+    assert!(alice_bid.is_success());
+
+    let highest_bid_alice: Bid = contract.view("get_highest_bid").await?.json()?;
+    assert_eq!(highest_bid_alice.bid, U128(60_000));
+    assert_eq!(highest_bid_alice.bidder, *bob.id());
+
+    let contract_account_balance: U128 = ft_balance_of(&ft_contract, contract_account.id()).await?;
+    assert_eq!(contract_account_balance, U128(0));
+
+    let alice_balance_after_bid: U128 = ft_balance_of(&ft_contract, alice.id()).await?;
+    assert_eq!(alice_balance_after_bid, U128(150_000));
+    let bob_balance_after_bid: U128 = ft_balance_of(&ft_contract, bob.id()).await?;
+    assert_eq!(bob_balance_after_bid, U128(90_000));
 
     Ok(())
 }
@@ -249,7 +285,7 @@ async fn create_subaccount(
 ) -> Result<near_workspaces::Account, Box<dyn std::error::Error>> {
     let subaccount = root
         .create_subaccount(name)
-        .initial_balance(FIVE_NEAR)
+        .initial_balance(TEN_NEAR)
         .transact()
         .await?
         .unwrap();

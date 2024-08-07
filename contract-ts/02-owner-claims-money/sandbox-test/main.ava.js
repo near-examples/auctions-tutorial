@@ -80,7 +80,6 @@ test("Test full contract", async (t) => {
   const new_available = parseFloat(contractNewBalance.available.toHuman());
   t.is(new_available.toFixed(2), (available + 2).toFixed(2));
 
-
   // Auctioneer tries to claim the auction again
   await t.throwsAsync(auctioneer.call(contract, "claim", {}, { gas: "300000000000000" }))
 

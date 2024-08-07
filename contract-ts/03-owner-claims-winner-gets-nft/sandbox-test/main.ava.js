@@ -15,11 +15,11 @@ test.beforeEach(async (t) => {
   // Create accounts
   const root = worker.rootAccount;
 
-  const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("50 N").toString() });
-  const bob = await root.createSubAccount("bob", { initialBalance: NEAR.parse("50 N").toString() });
-  const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("50 N").toString() });
-  const nft_contract = await root.createSubAccount("nft_contract");
-  const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("50 N").toString() });
+  const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("10 N").toString() });
+  const bob = await root.createSubAccount("bob", { initialBalance: NEAR.parse("10 N").toString() });
+  const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("10 N").toString() });
+  const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
+  const nft_contract = await root.createSubAccount("nft_contract", { initialBalance: NEAR.parse("20 N").toString() });
 
   // Deploy contract nft 
   await nft_contract.deploy(NFT_WASM_FILEPATH);
@@ -62,90 +62,53 @@ test.afterEach.always(async (t) => {
   });
 });
 
-test("Bids are placed", async (t) => {
-  const { alice, contract } = t.context.accounts;
+test("Test full contract", async (t) => {
+  const { alice, bob, auctioneer, contract, nft_contract } = t.context.accounts;
 
+  // Alice makes first bid
   await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
-
-  const highest_bid = await contract.view("get_highest_bid", {});
-
+  let highest_bid = await contract.view("get_highest_bid", {});
   t.is(highest_bid.bidder, alice.accountId);
   t.is(highest_bid.bid, NEAR.parse("1 N").toString());
-});
-
-test("Outbid returns previous bid", async (t) => {
-  const { alice, bob, contract } = t.context.accounts;
-
-  await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
   const aliceBalance = await alice.balance();
 
+  // Bob makes a higher bid
   await bob.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("2 N").toString() });
-  const highest_bid = await contract.view("get_highest_bid", {});
+  highest_bid = await contract.view("get_highest_bid", {});
   t.is(highest_bid.bidder, bob.accountId);
   t.is(highest_bid.bid, NEAR.parse("2 N").toString());
 
-  // we returned the money to alice
+  // Check that alice was returned her bid
   const aliceNewBalance = await alice.balance();
   t.deepEqual(aliceNewBalance.available, aliceBalance.available.add(NEAR.parse("1 N")));
-});
 
-test("Auction closes", async (t) => {
-  const { alice, contract } = t.context.accounts;
+  // Alice tires to make a bid with less NEAR than the previous 
+  await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }));
 
-  // alice can bid
-  await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
+  // Auctioneer claims auction but did not finish
+  await t.throwsAsync(auctioneer.call(contract, "claim", {}, { gas: "300000000000000" }));
 
-  // fast forward approx a minute
-  await t.context.worker.provider.fastForward(60)
-
-  // alice cannot bid anymore
-  await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }))
-});
-
-
-test("Claim auction", async (t) => {
-  const { alice, bob, contract, auctioneer,nft_contract} = t.context.accounts;
-
-  await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString(), gas: "300000000000000" });
-  await bob.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("2 N").toString(), gas: "300000000000000" });
+  // Fast forward 200 blocks
+  await t.context.worker.provider.fastForward(200)
 
   const auctioneerBalance = await auctioneer.balance();
   const available = parseFloat(auctioneerBalance.available.toHuman());
 
-
-  // fast forward approx a minute
-  await t.context.worker.provider.fastForward(60)
-
+  // Auctioneer claims the auction
   await auctioneer.call(contract, "claim", {}, { gas: "300000000000000" });
 
+  // Checks that the auctioneer has the correct balance
   const contractNewBalance = await auctioneer.balance();
   const new_available = parseFloat(contractNewBalance.available.toHuman());
-
   t.is(new_available.toFixed(2), (available + 2).toFixed(2));
 
+  // Check highest bidder received the NFT
   const response = await nft_contract.call(nft_contract, "nft_token",{"token_id": "1"},{ gas: "300000000000000" });
   t.is(response.owner_id,bob.accountId);
-});
 
-test("Auction open", async (t) => {
-  const { alice, bob, contract, auctioneer } = t.context.accounts;
-
-  await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
-  await bob.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("2 N").toString() });
-
+  // Auctioneer tries to claim the auction again
   await t.throwsAsync(auctioneer.call(contract, "claim", {}, { gas: "300000000000000" }))
-});
 
-test("Auction has been claimed", async (t) => {
-  const { alice, bob, contract, auctioneer } = t.context.accounts;
-
-  await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString(), gas: "300000000000000" });
-  await bob.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("2 N").toString(), gas: "300000000000000" });
-
-  // fast forward approx a minute
-  await t.context.worker.provider.fastForward(60)
-
-  await auctioneer.call(contract, "claim", {}, { gas: "300000000000000" });
-
-  await t.throwsAsync(auctioneer.call(contract, "claim", {}, { gas: "300000000000000" }))
+  // Alice tries to make a bid when the auction is over
+  await t.throwsAsync(alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() }));
 });

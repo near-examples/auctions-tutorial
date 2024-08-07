@@ -4,14 +4,12 @@ use near_sdk::{Gas, NearToken};
 use near_workspaces::result::ExecutionFinalResult;
 use serde_json::json;
 
-const FIVE_NEAR: NearToken = NearToken::from_near(5);
+const TEN_NEAR: NearToken = NearToken::from_near(10);
 const NFT_WASM_FILEPATH: &str = "./tests/non_fungible_token.wasm";
 
 #[tokio::test]
-
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
     let sandbox = near_workspaces::sandbox().await?;
-    let contract_wasm = near_workspaces::compile_project("./").await?;
 
     let nft_wasm = std::fs::read(NFT_WASM_FILEPATH)?;
     let nft_contract = sandbox.dev_deploy(&nft_wasm).await?;
@@ -29,8 +27,8 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     // Create accounts
     let alice = create_subaccount(&root, "alice").await?;
-    let auctioneer = create_subaccount(&root, "auctioneer").await?;
     let bob = create_subaccount(&root, "bob").await?;
+    let auctioneer = create_subaccount(&root, "auctioneer").await?;
     let contract_account = create_subaccount(&root, "contract").await?;
 
     // Mint NFT
@@ -54,6 +52,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert!(res.is_success());
 
     // Deploy and initialize auction contract
+    let contract_wasm = near_workspaces::compile_project("./").await?;
     let contract = contract_account.deploy(&contract_wasm).await?.unwrap();
 
     let now = Utc::now().timestamp();
@@ -80,9 +79,10 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let highest_bid_json = contract.view("get_highest_bid").await?;
     let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
-
     assert_eq!(highest_bid.bid, NearToken::from_near(1));
     assert_eq!(highest_bid.bidder, *alice.id());
+
+    let alice_balance = alice.view_account().await?.balance;
 
     // Bob makes a higher bid
     let bob_bid = bob
@@ -95,9 +95,12 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let highest_bid_json = contract.view("get_highest_bid").await?;
     let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
-
     assert_eq!(highest_bid.bid, NearToken::from_near(2));
     assert_eq!(highest_bid.bidder, *bob.id());
+
+    // Check that Alice was returned her bid
+    let new_alice_balance = alice.view_account().await?.balance;
+    assert!(new_alice_balance == alice_balance.saturating_add(NearToken::from_near(1)));
 
     // Alice tries to make a bid with less NEAR than the previous
     let alice_bid = alice
@@ -107,12 +110,6 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         .await?;
 
     assert!(alice_bid.is_failure());
-
-    let highest_bid_json = contract.view("get_highest_bid").await?;
-    let highest_bid: Bid = highest_bid_json.json::<Bid>()?;
-
-    assert_eq!(highest_bid.bid, NearToken::from_near(2));
-    assert_eq!(highest_bid.bidder, *bob.id());
 
     // Auctioneer claims auction but did not finish
     let auctioneer_claim = auctioneer
@@ -124,9 +121,8 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(auctioneer_claim.is_failure());
 
-    // Fast forward
-    // ~0.3 seconds * 400 = 120 seconds = 2 minutes
-    let blocks_to_advance = 400;
+    // Fast forward 200 blocks
+    let blocks_to_advance = 200;
     sandbox.fast_forward(blocks_to_advance).await?;
 
     let auctioneer_claim = auctioneer
@@ -138,11 +134,12 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(auctioneer_claim.is_success());
 
+    // Checks the auctioneer has the correct balance 
     let auctioneer_balance = auctioneer.view_account().await?.balance;
-    assert!(auctioneer_balance <= NearToken::from_near(7));
-    assert!(auctioneer_balance > NearToken::from_millinear(6990));
+    assert!(auctioneer_balance <= NearToken::from_near(12));
+    assert!(auctioneer_balance > NearToken::from_millinear(11990));
 
-    // Check auctioneer received the NFT
+    // Check highest bidder received the NFT
     let token_info: serde_json::Value = nft_contract
         .call("nft_token")
         .args_json(json!({"token_id": "1"}))
@@ -186,7 +183,7 @@ async fn create_subaccount(
 ) -> Result<near_workspaces::Account, Box<dyn std::error::Error>> {
     let subaccount = root
         .create_subaccount(name)
-        .initial_balance(FIVE_NEAR)
+        .initial_balance(TEN_NEAR)
         .transact()
         .await?
         .unwrap();
