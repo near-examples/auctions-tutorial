@@ -16,7 +16,7 @@ test.beforeEach(async (t) => {
 
   const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("10 N").toString() });
   const bob = await root.createSubAccount("bob", { initialBalance: NEAR.parse("10 N").toString() });
-  const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
+  const auction_contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
 
   // Deploy contract (input from package.json)
   await contract.deploy(process.argv[2]);

@@ -17,7 +17,7 @@ test.beforeEach(async (t) => {
   const alice = await root.createSubAccount("alice", { initialBalance: NEAR.parse("10 N").toString() });
   const bob = await root.createSubAccount("bob", { initialBalance: NEAR.parse("10 N").toString() });
   const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("10 N").toString() });
-  const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
+  const auction_contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
 
   // Deploy contract (input from package.json)
   await contract.deploy(process.argv[2]);
@@ -79,7 +79,6 @@ test("Test full contract", async (t) => {
   const contractNewBalance = await auctioneer.balance();
   const new_available = parseFloat(contractNewBalance.available.toHuman());
   t.is(new_available.toFixed(2), (available + 2).toFixed(2));
-
 
   // Auctioneer tries to claim the auction again
   await t.throwsAsync(auctioneer.call(contract, "claim", {}, { gas: "300000000000000" }))

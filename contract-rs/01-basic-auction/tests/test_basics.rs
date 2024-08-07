@@ -8,7 +8,6 @@ const TEN_NEAR: NearToken = NearToken::from_near(10);
 #[tokio::test]
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
     let sandbox = near_workspaces::sandbox().await?;
-    let contract_wasm = near_workspaces::compile_project("./").await?;
 
     let root = sandbox.root_account()?;
 
@@ -18,6 +17,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let contract_account = create_subaccount(&root, "contract").await?;
 
     // Deploy and initialize contract
+    let contract_wasm = near_workspaces::compile_project("./").await?;
     let contract = contract_account.deploy(&contract_wasm).await?.unwrap();
 
     let now = Utc::now().timestamp();
