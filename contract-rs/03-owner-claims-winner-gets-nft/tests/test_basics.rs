@@ -11,12 +11,18 @@ const NFT_WASM_FILEPATH: &str = "./tests/non_fungible_token.wasm";
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
     let sandbox = near_workspaces::sandbox().await?;
 
+    let root: near_workspaces::Account = sandbox.root_account()?;
+
+    // Create accounts
+    let alice = create_subaccount(&root, "alice").await?;
+    let bob = create_subaccount(&root, "bob").await?;
+    let auctioneer = create_subaccount(&root, "auctioneer").await?;
+    let contract_account = create_subaccount(&root, "contract").await?;
+    
+    // Deploy and initialize NFT contract
     let nft_wasm = std::fs::read(NFT_WASM_FILEPATH)?;
     let nft_contract = sandbox.dev_deploy(&nft_wasm).await?;
 
-    let root: near_workspaces::Account = sandbox.root_account()?;
-
-    // Initialize NFT contract
     let res = nft_contract
         .call("new_default_meta")
         .args_json(serde_json::json!({"owner_id": root.id()}))
@@ -25,15 +31,10 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(res.is_success());
 
-    // Create accounts
-    let alice = create_subaccount(&root, "alice").await?;
-    let bob = create_subaccount(&root, "bob").await?;
-    let auctioneer = create_subaccount(&root, "auctioneer").await?;
-    let contract_account = create_subaccount(&root, "contract").await?;
-
     // Mint NFT
+    const TOKEN_ID: &str = "1";
     let request_payload = json!({
-        "token_id": "1",
+        "token_id": TOKEN_ID,
         "receiver_id": contract_account.id(),
         "metadata": {
             "title": "LEEROYYYMMMJENKINSSS",
@@ -61,7 +62,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let init: ExecutionFinalResult = contract
         .call("init")
         .args_json(
-            json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"nft_contract":nft_contract.id(),"token_id":"1" }),
+            json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"nft_contract":nft_contract.id(),"token_id":TOKEN_ID }),
         )
         .transact()
         .await?;
@@ -142,7 +143,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     // Check highest bidder received the NFT
     let token_info: serde_json::Value = nft_contract
         .call("nft_token")
-        .args_json(json!({"token_id": "1"}))
+        .args_json(json!({"token_id": TOKEN_ID}))
         .transact()
         .await?
         .json()

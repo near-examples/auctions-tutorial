@@ -19,16 +19,15 @@ test.beforeEach(async (t) => {
   const bob = await root.createSubAccount("bob", { initialBalance: NEAR.parse("10 N").toString() });
   const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("10 N").toString() });
   const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
-  const nft_contract = await root.createSubAccount("nft_contract", { initialBalance: NEAR.parse("20 N").toString() });
 
-  // Deploy contract nft 
-  await nft_contract.deploy(NFT_WASM_FILEPATH);
+  // Deploy and initalize NFT contract 
+  const nft_contract = await root.devDeploy(NFT_WASM_FILEPATH);
   await nft_contract.call(nft_contract, "new_default_meta", { "owner_id": nft_contract.accountId });
 
-  const token_id = "1";
   // Mint NFT
+  const TOKEN_ID = "1";
   let request_payload = {
-    "token_id": token_id,
+    "token_id": TOKEN_ID,
     "receiver_id": contract.accountId,
     "metadata": {
       "title": "LEEROYYYMMMJENKINSSS",
@@ -47,7 +46,7 @@ test.beforeEach(async (t) => {
     end_time: String((Date.now() + 60000) * 10 ** 6),
     auctioneer: auctioneer.accountId,
     nft_contract: nft_contract.accountId,
-    token_id: token_id
+    token_id: TOKEN_ID
   });
 
   // Save state for test runs, it is unique for each test
