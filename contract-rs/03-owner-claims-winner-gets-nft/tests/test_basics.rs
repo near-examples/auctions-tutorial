@@ -11,12 +11,18 @@ const NFT_WASM_FILEPATH: &str = "./tests/non_fungible_token.wasm";
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
     let sandbox = near_workspaces::sandbox().await?;
 
+    let root: near_workspaces::Account = sandbox.root_account()?;
+
+    // Create accounts
+    let alice = create_subaccount(&root, "alice").await?;
+    let bob = create_subaccount(&root, "bob").await?;
+    let auctioneer = create_subaccount(&root, "auctioneer").await?;
+    let contract_account = create_subaccount(&root, "contract").await?;
+    
+    // Deploy and initialize NFT contract
     let nft_wasm = std::fs::read(NFT_WASM_FILEPATH)?;
     let nft_contract = sandbox.dev_deploy(&nft_wasm).await?;
 
-    let root: near_workspaces::Account = sandbox.root_account()?;
-
-    // Initialize NFT contract
     let res = nft_contract
         .call("new_default_meta")
         .args_json(serde_json::json!({"owner_id": root.id()}))
@@ -24,12 +30,6 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
         .await?;
 
     assert!(res.is_success());
-
-    // Create accounts
-    let alice = create_subaccount(&root, "alice").await?;
-    let bob = create_subaccount(&root, "bob").await?;
-    let auctioneer = create_subaccount(&root, "auctioneer").await?;
-    let contract_account = create_subaccount(&root, "contract").await?;
 
     // Mint NFT
     let request_payload = json!({
