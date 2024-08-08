@@ -32,8 +32,9 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert!(res.is_success());
 
     // Mint NFT
+    const TOKEN_ID: &str = "1";
     let request_payload = json!({
-        "token_id": "1",
+        "token_id": TOKEN_ID,
         "receiver_id": contract_account.id(),
         "metadata": {
             "title": "LEEROYYYMMMJENKINSSS",
@@ -61,7 +62,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let init: ExecutionFinalResult = contract
         .call("init")
         .args_json(
-            json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"nft_contract":nft_contract.id(),"token_id":"1" }),
+            json!({"end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"nft_contract":nft_contract.id(),"token_id":TOKEN_ID }),
         )
         .transact()
         .await?;
@@ -142,7 +143,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     // Check highest bidder received the NFT
     let token_info: serde_json::Value = nft_contract
         .call("nft_token")
-        .args_json(json!({"token_id": "1"}))
+        .args_json(json!({"token_id": TOKEN_ID}))
         .transact()
         .await?
         .json()

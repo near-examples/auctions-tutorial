@@ -25,8 +25,9 @@ test.beforeEach(async (t) => {
   await nft_contract.call(nft_contract, "new_default_meta", { "owner_id": nft_contract.accountId });
 
   // Mint NFT
+  const TOKEN_ID = "1";
   let request_payload = {
-    "token_id": "1",
+    "token_id": TOKEN_ID,
     "receiver_id": contract.accountId,
     "metadata": {
       "title": "LEEROYYYMMMJENKINSSS",
@@ -45,7 +46,7 @@ test.beforeEach(async (t) => {
     end_time: String((Date.now() + 60000) * 10 ** 6),
     auctioneer: auctioneer.accountId,
     nft_contract: nft_contract.accountId,
-    token_id: "1"
+    token_id: TOKEN_ID
   });
 
   // Save state for test runs, it is unique for each test
