@@ -20,7 +20,7 @@ test.beforeEach(async (t) => {
   const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("10 N").toString() });
   const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
 
-  // Deploy and initalize NFT contract 
+  // Deploy and initialize NFT contract 
   const nft_contract = await root.devDeploy(NFT_WASM_FILEPATH);
   await nft_contract.call(nft_contract, "new_default_meta", { "owner_id": nft_contract.accountId });
 

@@ -60,8 +60,7 @@ class AuctionContract {
 
     assert(this.auction_end_time > near.blockTimestamp(), "Auction has ended");
     assert(near.predecessorAccountId() == this.ft_contract, "The token is not supported");
-    assert(amount >= previous.bid, "You must place a higher bid");
-
+    assert(BigInt(amount) >= BigInt(previous.bid), "You must place a higher bid");
     this.highest_bid = {
       bidder: sender_id,
       bid: amount,

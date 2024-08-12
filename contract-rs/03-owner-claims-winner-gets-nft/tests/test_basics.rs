@@ -18,7 +18,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let bob = create_subaccount(&root, "bob").await?;
     let auctioneer = create_subaccount(&root, "auctioneer").await?;
     let contract_account = create_subaccount(&root, "contract").await?;
-    
+
     // Deploy and initialize NFT contract
     let nft_wasm = std::fs::read(NFT_WASM_FILEPATH)?;
     let nft_contract = sandbox.dev_deploy(&nft_wasm).await?;
@@ -135,7 +135,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(auctioneer_claim.is_success());
 
-    // Checks the auctioneer has the correct balance 
+    // Checks the auctioneer has the correct balance
     let auctioneer_balance = auctioneer.view_account().await?.balance;
     assert!(auctioneer_balance <= NearToken::from_near(12));
     assert!(auctioneer_balance > NearToken::from_millinear(11990));

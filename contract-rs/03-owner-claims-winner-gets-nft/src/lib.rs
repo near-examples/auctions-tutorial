@@ -94,7 +94,7 @@ impl Contract {
             .with_static_gas(Gas::from_tgas(30))
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .nft_transfer(self.highest_bid.bidder.clone(), self.token_id.clone());
-}
+    }
 
     pub fn get_highest_bid(&self) -> Bid {
         self.highest_bid.clone()
