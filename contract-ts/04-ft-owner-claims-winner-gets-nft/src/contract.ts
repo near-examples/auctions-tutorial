@@ -66,19 +66,13 @@ class AuctionContract {
       bid: amount,
     };
 
-    if (previous.bidder != near.currentAccountId()) {
-      near.log("inside bid");
-      // this.ft_transfer(this.highest_bid.bidder, this.highest_bid.bid)
-      return NearPromise.new(this.ft_contract)
-        .functionCall("ft_transfer", JSON.stringify({ receiver_id: previous.bidder, amount: previous.bid }), BigInt(1), THIRTY_TGAS)
-        .then(
-          NearPromise.new(near.currentAccountId())
-            .functionCall("ft_transfer_callback", JSON.stringify({}), NO_DEPOSIT, THIRTY_TGAS)
-        )
-        .asReturn()
-    } else {
-      return BigInt(0);
-    }
+    return NearPromise.new(this.ft_contract)
+      .functionCall("ft_transfer", JSON.stringify({ receiver_id: previous.bidder, amount: previous.bid }), BigInt(1), THIRTY_TGAS)
+      .then(
+        NearPromise.new(near.currentAccountId())
+          .functionCall("ft_transfer_callback", JSON.stringify({}), NO_DEPOSIT, THIRTY_TGAS)
+      )
+      .asReturn()
   }
 
   @call({ privateFunction: true })
