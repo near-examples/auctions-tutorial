@@ -16,11 +16,12 @@ export default function Home() {
   const [auctionInfo, setAuctionInfo] = useState(null)
   const [nftInfo, setNftInfo] = useState(null)
   const [history, setHistory] = useState(null)
-  const [secondsRemaining, setSecondsRemaining] = useState(5);
+  const [secondsRemaining, setSecondsRemaining] = useState(5)
   const [ftName, setFtName] = useState("")
   const [ftImg, setFtImg] = useState("")
   const [ftDecimals, setFtDecimals] = useState(0)
   const [lastBidDisplay, setLastBidDisplay] = useState(0)
+  const [validAuction, setValidAuction] = useState("Invalid Auction")
 
   const { wallet } = useContext(NearContext);
 
@@ -58,6 +59,9 @@ export default function Home() {
         args: { token_id: auctionInfo.token_id }
       });
       setNftInfo(data)
+      if (data.owner_id == AuctionContract) {
+        setValidAuction("Valid Auction")
+      }
     }
     if (auctionInfo) {
       getNftInfo();
@@ -117,7 +121,7 @@ export default function Home() {
     <main className={styles.main}>
       <div className={styles.leftPanel}>
         {!auctionInfo ? <SkeletonAuctionItem /> : <LastBid lastBid={auctionInfo?.highest_bid} lastUpdate={secondsRemaining} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay}/>} 
-        {!auctionInfo ? <SkeletonAuctionItem /> : <AuctionItem nftMetadata={nftInfo?.metadata} />}
+        {!auctionInfo ? <SkeletonAuctionItem /> : <AuctionItem nftMetadata={nftInfo?.metadata} validAuction={validAuction}/>}
       </div>
       <div className={styles.rightPanel}>
         {!auctionInfo ? <SkeletonTimer /> : <Timer endTime={auctionInfo.auction_end_time} claimed={auctionInfo?.claimed} action={claim}/>}
