@@ -3,7 +3,7 @@ import { NearContext } from '@/context';
 import styles from './BidHistory.module.css';
 import { toast } from 'react-toastify';
 
-const BidHistory = ({ bids, action, ftName, ftImg, lastBidDisplay }) => {
+const BidHistory = ({ bids, ftName, ftImg, lastBidDisplay, action}) => {
   const [amount, setAmount] = useState(lastBidDisplay + 1);
   const { signedAccountId } = useContext(NearContext);
 

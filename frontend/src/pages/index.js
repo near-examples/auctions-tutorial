@@ -14,7 +14,7 @@ import LastBid from '@/components/LastBid';
 
 export default function Home() {
   const [auctionInfo, setAuctionInfo] = useState(null)
-  const [nft, setNft] = useState(null)
+  const [nftInfo, setNftInfo] = useState(null)
   const [history, setHistory] = useState(null)
   const [secondsRemaining, setSecondsRemaining] = useState(5);
   const [ftName, setFtName] = useState("")
@@ -57,7 +57,7 @@ export default function Home() {
         method: "nft_token",
         args: { token_id: auctionInfo.token_id }
       });
-      setNft(data)
+      setNftInfo(data)
     }
     if (auctionInfo) {
       getNftInfo();
@@ -117,11 +117,11 @@ export default function Home() {
     <main className={styles.main}>
       <div className={styles.leftPanel}>
         {!auctionInfo ? <SkeletonAuctionItem /> : <LastBid lastBid={auctionInfo?.highest_bid} lastUpdate={secondsRemaining} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay}/>} 
-        {!auctionInfo ? <SkeletonAuctionItem /> : <AuctionItem nft={nft?.metadata} lastBid={auctionInfo?.highest_bid} lastUpdate={secondsRemaining} />}
+        {!auctionInfo ? <SkeletonAuctionItem /> : <AuctionItem nftMetadata={nftInfo?.metadata} />}
       </div>
       <div className={styles.rightPanel}>
         {!auctionInfo ? <SkeletonTimer /> : <Timer endTime={auctionInfo.auction_end_time} claimed={auctionInfo?.claimed} action={claim}/>}
-        {!auctionInfo ? <SkeletonBidHistory /> : <BidHistory bids={history} action={bid} lastBid={auctionInfo?.highest_bid} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} />}
+        {!auctionInfo ? <SkeletonBidHistory /> : <BidHistory bids={history} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} action={bid}/>}
       </div>
     </main>
 

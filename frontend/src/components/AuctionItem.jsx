@@ -2,14 +2,16 @@ import styles from './AuctionItem.module.css';
 import image from './images.jpeg';
 
 
-const AuctionItem = ({ nft }) => {
-  const cardImage = nft?.media ? `https://image-cache-service-z3w7d7dnea-ew.a.run.app/media?url=https://arweave.net/${nft.media}` : image
+const AuctionItem = ({ nftMetadata }) => {
+  const cardImage = nftMetadata?.media 
+    ? `https://image-cache-service-z3w7d7dnea-ew.a.run.app/media?url=https://arweave.net/${nftMetadata.media}` 
+    : image
 
   return (
     <div className={styles.container}>
        <div className={styles.description}>
-          <h2>{nft?.title}</h2>
-          <p>{nft?.description}</p>
+          <h2>{nftMetadata?.title}</h2>
+          <p>{nftMetadata?.description}</p>
         </div>
       <div className={styles.imageSection}>
         <img
