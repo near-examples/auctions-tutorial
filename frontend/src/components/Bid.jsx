@@ -1,9 +1,9 @@
 import { useContext, useEffect, useState } from 'react';
 import { NearContext } from '@/context';
-import styles from './BidHistory.module.css';
+import styles from './Bid.module.css';
 import { toast } from 'react-toastify';
 
-const BidHistory = ({ bids, ftName, ftImg, lastBidDisplay, action}) => {
+const Bid = ({ bids, ftName, ftImg, lastBidDisplay, action}) => {
   const [amount, setAmount] = useState(lastBidDisplay + 1);
   const { signedAccountId } = useContext(NearContext);
 
@@ -50,4 +50,4 @@ const BidHistory = ({ bids, ftName, ftImg, lastBidDisplay, action}) => {
   );
 }
 
-export default BidHistory;
+export default Bid;

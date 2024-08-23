@@ -1,12 +1,12 @@
 import styles from '@/styles/app.module.css';
 import AuctionItem from '@/components/AuctionItem';
 import Timer from '@/components/Timer';
-import BidHistory from '@/components/BidHistory';
+import Bid from '@/components/Bid';
 import { getInfo as getInfoHistory } from '@/services/history.service.mock';
 import { useContext, useEffect, useState } from 'react';
 import SkeletonAuctionItem from '@/components/Skeletons/SkeletonAuctionItem';
 import SkeletonTimer from '@/components/Skeletons/SkeletonTimer';
-import SkeletonBidHistory from '@/components/Skeletons/SkeletonBidHistory';
+import SkeletonBid from '@/components/Skeletons/SkeletonBid';
 import { NearContext } from '@/context';
 import { AuctionContract } from '@/config';
 import LastBid from '@/components/LastBid';
@@ -125,7 +125,7 @@ export default function Home() {
       </div>
       <div className={styles.rightPanel}>
         {!auctionInfo ? <SkeletonTimer /> : <Timer endTime={auctionInfo.auction_end_time} claimed={auctionInfo?.claimed} action={claim}/>}
-        {!auctionInfo ? <SkeletonBidHistory /> : <BidHistory bids={history} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} action={bid}/>}
+        {!auctionInfo ? <SkeletonBid /> : <Bid bids={history} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} action={bid}/>}
       </div>
     </main>
 
