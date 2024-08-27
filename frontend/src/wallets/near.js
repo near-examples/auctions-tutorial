@@ -137,7 +137,6 @@ export class Wallet {
 
     // Retrieve transaction result from the network
     const transaction = await provider.txStatus(txhash, 'unnused');
-    console.log(typeof providers.getTransactionLastResult(transaction))
     return providers.getTransactionLastResult(transaction);
   };
 }
