@@ -2,7 +2,6 @@ import styles from '@/styles/app.module.css';
 import AuctionItem from '@/components/AuctionItem';
 import Timer from '@/components/Timer';
 import Bid from '@/components/Bid';
-import { getInfo as getInfoHistory } from '@/services/history.service.mock';
 import { useContext, useEffect, useState } from 'react';
 import SkeletonAuctionItem from '@/components/Skeletons/SkeletonAuctionItem';
 import SkeletonTimer from '@/components/Skeletons/SkeletonTimer';
@@ -15,7 +14,6 @@ import LastBid from '@/components/LastBid';
 export default function Home() {
   const [auctionInfo, setAuctionInfo] = useState(null)
   const [nftInfo, setNftInfo] = useState(null)
-  const [history, setHistory] = useState(null)
   const [secondsRemaining, setSecondsRemaining] = useState(5)
   const [ftName, setFtName] = useState("")
   const [ftImg, setFtImg] = useState("")
@@ -86,16 +84,6 @@ export default function Home() {
     }
   }, [auctionInfo]);
 
-  useEffect(() => {
-    const getHistoryInfo = async () => {
-      const data = await getInfoHistory();
-      setHistory(data)
-    }
-
-    getHistoryInfo();
-
-  }, [])
-
   const bid = async (amount) => {
     let real_amount = amount * Math.pow(10, ftDecimals)
     let response = await wallet.callMethod({
@@ -125,7 +113,7 @@ export default function Home() {
       </div>
       <div className={styles.rightPanel}>
         {!auctionInfo ? <SkeletonTimer /> : <Timer endTime={auctionInfo.auction_end_time} claimed={auctionInfo?.claimed} action={claim}/>}
-        {!auctionInfo ? <SkeletonBid /> : <Bid bids={history} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} action={bid}/>}
+        {!auctionInfo ? <SkeletonBid /> : <Bid ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} ftDecimals={ftDecimals} action={bid}/>}
       </div>
     </main>
 
