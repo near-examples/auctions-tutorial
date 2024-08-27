@@ -126,7 +126,7 @@ export class Wallet {
   };
 
   /**
-   * Makes a call to a contract
+   * Retrieves transaction result from the network
    * @param {string} txhash - the transaction hash
    * @returns {Promise<JSON.value>} - the result of the transaction
    */
@@ -137,6 +137,22 @@ export class Wallet {
 
     // Retrieve transaction result from the network
     const transaction = await provider.txStatus(txhash, 'unnused');
+    console.log(typeof providers.getTransactionLastResult(transaction))
     return providers.getTransactionLastResult(transaction);
   };
+  
+  /**
+   * Retrieves a transaction from the network
+   * @param {string} txhash - the transaction hash
+   * @returns {Promise<Object>} - The transaction
+   */
+  getTransaction = async (txhash) => {
+    const walletSelector = await this.selector;
+    const { network } = walletSelector.options;
+    const provider = new providers.JsonRpcProvider({ url: network.nodeUrl });
+
+    // Retrieve transaction result from the network
+    const transaction = await provider.txStatus(txhash, 'unnused');
+    return transaction;
+  }
 }
