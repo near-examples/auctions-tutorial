@@ -1,15 +1,25 @@
-import { useState } from 'react';
-import styles from './BidHistory.module.css';
+import { useContext, useEffect, useState } from 'react';
+import { NearContext } from '@/context';
+import styles from './Bid.module.css';
 import { toast } from 'react-toastify';
-import { FT, FTicon } from '@/config';
 
-const BidHistory = ({ bids, action, lastBid }) => {
-  const [amount, setAmount] = useState(lastBid.bid)
+const Bid = ({ bids, ftName, ftImg, lastBidDisplay, action}) => {
+  const [amount, setAmount] = useState(lastBidDisplay + 1);
+  const { signedAccountId } = useContext(NearContext);
 
   const handleBid = async () => {
-    await action(amount);
+    if (signedAccountId) {
+      await action(amount);
     toast("you have made a successful bid");
+    } else {
+      toast("Please sign in to make a bid");
+    }
   }
+
+  useEffect(() => {
+    setAmount(lastBidDisplay + 1);
+  }
+  , [lastBidDisplay]);
 
   return (
     <div className={styles.historyContainer}>
@@ -27,12 +37,12 @@ const BidHistory = ({ bids, action, lastBid }) => {
         <input
           type="number"
           value={amount}
-          min={lastBid.bid}
+          min={lastBidDisplay}
           onChange={(e) => setAmount(e.target.value)}
           className={styles.inputField}
         />
         <button className={styles.bidButton} onClick={handleBid}>
-        <img className={styles.iconFT} src={FTicon} alt={FT} width="25" /> Bid
+        <img className={styles.iconFT} src={ftImg} alt={ftName} width="25" /> Bid
         </button>
       </div>
 
@@ -40,4 +50,4 @@ const BidHistory = ({ bids, action, lastBid }) => {
   );
 }
 
-export default BidHistory;
+export default Bid;

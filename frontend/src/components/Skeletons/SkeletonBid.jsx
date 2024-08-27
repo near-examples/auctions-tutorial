@@ -1,6 +1,6 @@
 import styles from './Skeleton.module.css';
 
-const SkeletonBidHistory = () => {
+const SkeletonBid = () => {
   return (
     <div className={styles.historyContainer}>
       <h3>History</h3>
@@ -17,4 +17,4 @@ const SkeletonBidHistory = () => {
   );
 }
 
-export default SkeletonBidHistory;
+export default SkeletonBid;

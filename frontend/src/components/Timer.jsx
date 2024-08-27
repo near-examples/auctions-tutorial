@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import styles from './Timer.module.css';
 import { toast } from 'react-toastify';
 
-const Timer = ({ endTime ,claimed,action }) => {
+const Timer = ({ endTime, claimed, action }) => {
   const claim = async() =>{ 
     await action();
     toast("Congratulations!!")

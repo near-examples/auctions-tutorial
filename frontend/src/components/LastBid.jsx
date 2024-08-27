@@ -1,15 +1,14 @@
-import { FT, FTicon } from '@/config'
 import styles from './LastBid.module.css';
 
-const LastBid = ({lastBid,lastUpdate }) => {
+const LastBid = ({lastBid, lastUpdate, ftName, ftImg, lastBidDisplay }) => {
   return (
     <div className={styles.priceSection}>
         <div className={styles.detail}>       
-          <img className={styles.iconFT} src={FTicon} alt={FT} width="25" />
-          <span className={styles.currentPrice}>${lastBid.bid} {FT}</span>
+          <span className={styles.currentPrice}>The last bid was {lastBidDisplay} {ftName} </span>
+          <img className={styles.iconFT} src={ftImg} alt={ftName} width="25" />
         </div>
-        <span>By {lastBid.bidder} </span>
-        <span>refresh in {lastUpdate}</span>
+        <span>Made by {lastBid.bidder} </span>
+        <span>Refresh page in {lastUpdate}</span>
     </div>
   )
 }
