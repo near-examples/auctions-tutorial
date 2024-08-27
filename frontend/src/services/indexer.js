@@ -45,7 +45,6 @@ export const getBidHistory = async () => {
         let amount = Number(parsedArgs.amount);
         let account = parsedArgs.sender_id;
 
-        if (pastBids.length < 5) {
           if (pastBids.length > 0) {
             const last_amount = pastBids[pastBids.length - 1][1];
             if (amount > last_amount) {
@@ -56,8 +55,7 @@ export const getBidHistory = async () => {
               pastBids.push([account, amount]);
             }
           }
-        }
     }
 
-    return pastBids.reverse();
+    return pastBids.reverse().slice(0, 5);
   };
