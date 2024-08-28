@@ -1,2 +1,1 @@
 export const AUCTION_CONTRACT = "auction-example.testnet"; // Replace with your contract name
-export const API_KEY = "1D904FCF8B7847E8ADE4E98D271DF695"; // Replace with your API key from https://dash.nearblocks.io/user/keys

@@ -9,11 +9,75 @@ import SkeletonBid from '@/components/Skeletons/SkeletonBid';
 import { NearContext } from '@/context';
 import { AUCTION_CONTRACT } from '@/config';
 import LastBid from '@/components/LastBid';
+import { useRouter } from 'next/router';
 
-export default function Home() {
+export const getServerSideProps = async () => {
+  console.log("Hello from getServerSideProps");
+  try {
+    // Get init transaction
+    const initRes = await fetch('https://api-testnet.nearblocks.io/v1/account/auction-example.testnet/txns?method=init&page=1&per_page=25&order=desc', {
+      headers: {
+        'Accept': '*/*',
+        'Authorization': `Bearer ${process.env.API_KEY}`
+      }
+    });
+
+    const initJson = await initRes.json();
+
+    // Get all bid transactions
+    const bidRes = await fetch('https://api-testnet.nearblocks.io/v1/account/auction-example.testnet/txns?from=dai.fakes.testnet&method=ft_on_transfer&page=1&per_page=25&order=desc', {
+      headers: {
+        'Accept': '*/*',
+        'Authorization': `Bearer ${process.env.API_KEY}`
+      }
+    });
+    
+    const bidJson = await bidRes.json();
+
+    // Get the starting price from the init transaction
+    const initArgs = initJson.txns[0].actions[1].args;
+    const parsedInitArgs = JSON.parse(initArgs);
+    const startingPrice = Number(parsedInitArgs.starting_price);
+
+    const txns = bidJson.txns;
+    let pastBids = [];
+
+    // Add bids that are higher than the previous to the pastBids array
+    for (let i = txns.length - 1; i >= 0; i--) {
+        const txn = txns[i];
+
+        let args = txn.actions[0].args;
+        let parsedArgs = JSON.parse(args);
+        let amount = Number(parsedArgs.amount);
+        let account = parsedArgs.sender_id;
+
+          if (pastBids.length > 0) {
+            const last_amount = pastBids[pastBids.length - 1][1];
+            if (amount > last_amount) {
+              pastBids.push([account, amount]);
+            }
+          } else {
+            if (amount > startingPrice) {
+              pastBids.push([account, amount]);
+            }
+          }
+    }
+
+    return {
+      props: {
+        pastBids: pastBids.reverse().slice(0, 5)
+      }
+    }
+  } catch (error) {
+    console.log("Failed to fetch past bids", error);
+  }
+}
+ 
+
+export default function Home({pastBids}) {
   const [auctionInfo, setAuctionInfo] = useState(null)
   const [nftInfo, setNftInfo] = useState(null)
-  const [secondsRemaining, setSecondsRemaining] = useState(5)
+  const [secondsRemaining, setSecondsRemaining] = useState(20)
   const [ftName, setFtName] = useState("")
   const [ftImg, setFtImg] = useState("")
   const [ftDecimals, setFtDecimals] = useState(0)
@@ -21,6 +85,7 @@ export default function Home() {
   const [validAuction, setValidAuction] = useState("Invalid Auction")
 
   const { wallet } = useContext(NearContext);
+  const router = useRouter();
 
   useEffect(() => {
     const getInfo = async () => {
@@ -29,16 +94,18 @@ export default function Home() {
         method: "get_auction_info",
       });
       setAuctionInfo(data)
+      
+      router.replace(router.asPath); // Reload server side props
     }
     getInfo();
 
     const intervalId = setInterval(() => {
       getInfo();
-      setSecondsRemaining(5);
-    }, 5000);
+      setSecondsRemaining(20);
+    }, 20000);
     
     const countdownIntervalId = setInterval(() => {
-      setSecondsRemaining(prev => (prev === 1 ? 5 : prev - 1));
+      setSecondsRemaining(prev => (prev === 1 ? 20 : prev - 1));
     }, 1000);
 
   
@@ -112,7 +179,7 @@ export default function Home() {
       </div>
       <div className={styles.rightPanel}>
         {!auctionInfo ? <SkeletonTimer /> : <Timer endTime={auctionInfo.auction_end_time} claimed={auctionInfo?.claimed} action={claim}/>}
-        {!auctionInfo ? <SkeletonBid /> : <Bid ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} ftDecimals={ftDecimals} action={bid}/>}
+        {!auctionInfo ? <SkeletonBid /> : <Bid pastBids={pastBids} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} ftDecimals={ftDecimals} action={bid}/>}
       </div>
     </main>
 
