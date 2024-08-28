@@ -1,8 +1,7 @@
 export const getBidHistory = async () => {
     try {
       // Get init transaction
-      const initRes = await fetch('https://api-testnet.nearblocks.io/v1/account/auction-example.testnet/txns?page=1&per_page=1&order=desc&method=init', {
-        method: 'GET',
+      const initRes = await fetch('https://api-testnet.nearblocks.io/v1/account/auction-example.testnet/txns?method=init&page=1&per_page=25&order=desc', {
         headers: {
           'Accept': '*/*'
         }
@@ -11,8 +10,7 @@ export const getBidHistory = async () => {
       const initJson = await initRes.json();
 
       // Get all bid transactions
-      const bidRes = await fetch('https://api-testnet.nearblocks.io/v1/account/auction-example.testnet/txns?page=1&per_page=25&order=desc&method=ft_on_transfer', {
-        method: 'GET',
+      const bidRes = await fetch('https://api-testnet.nearblocks.io/v1/account/auction-example.testnet/txns?from=dai.fakes.testnet&method=ft_on_transfer&page=1&per_page=25&order=desc', {
         headers: {
           'Accept': '*/*'
         }
