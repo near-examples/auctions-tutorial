@@ -7,9 +7,8 @@ import SkeletonAuctionItem from '@/components/Skeletons/SkeletonAuctionItem';
 import SkeletonTimer from '@/components/Skeletons/SkeletonTimer';
 import SkeletonBid from '@/components/Skeletons/SkeletonBid';
 import { NearContext } from '@/context';
-import { AuctionContract } from '@/config';
+import { AUCTION_CONTRACT } from '@/config';
 import LastBid from '@/components/LastBid';
-
 
 export default function Home() {
   const [auctionInfo, setAuctionInfo] = useState(null)
@@ -26,7 +25,7 @@ export default function Home() {
   useEffect(() => {
     const getInfo = async () => {
       const data = await wallet.viewMethod({
-        contractId: AuctionContract,
+        contractId: AUCTION_CONTRACT,
         method: "get_auction_info",
       });
       setAuctionInfo(data)
@@ -57,7 +56,7 @@ export default function Home() {
         args: { token_id: auctionInfo.token_id }
       });
       setNftInfo(data)
-      if (data.owner_id == AuctionContract) {
+      if (data.owner_id == AUCTION_CONTRACT) {
         setValidAuction("Valid Auction")
       }
     }
@@ -90,7 +89,7 @@ export default function Home() {
       contractId: auctionInfo.ft_contract,
       method: "ft_transfer_call",
       deposit: 1,
-      args: { "receiver_id": AuctionContract, "amount": String(real_amount), "msg": "" },
+      args: { "receiver_id": AUCTION_CONTRACT, "amount": String(real_amount), "msg": "" },
       gas:"300000000000000"
     })
     return response
@@ -98,7 +97,7 @@ export default function Home() {
 
   const claim = async () => {
     let response = await wallet.callMethod({
-      contractId: AuctionContract,
+      contractId: AUCTION_CONTRACT,
       method: "claim",
       gas:"300000000000000"
     })
