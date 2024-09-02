@@ -17,7 +17,7 @@ pub struct Contract {
     // this way it is not deserialized on each method call
     code: LazyOption<Vec<u8>>,
     // Please note that it is much more efficient to **not** store this
-    // code in the state, and directly use `DEFAULT_CONTRACT`
+    // code in the state, and directly use `AUCTION_CONTRACT`
     // However, this does not enable to update the stored code.
 }
 

@@ -73,7 +73,7 @@ impl Contract {
 
         // Add callback
         promise.then(
-            Self::ext(env::current_account_id()).create_factory_subaccount_and_deploy_callback(
+            Self::ext(env::current_account_id()).deploy_new_auction_callback(
                 subaccount,
                 env::predecessor_account_id(),
                 attached,
@@ -82,7 +82,7 @@ impl Contract {
     }
 
     #[private]
-    pub fn create_factory_subaccount_and_deploy_callback(
+    pub fn deploy_new_auction_callback(
         &mut self,
         account: AccountId,
         user: AccountId,
