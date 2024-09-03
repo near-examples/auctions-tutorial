@@ -53,18 +53,18 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let a_minute_from_now = (now + 60) * 1000000000;
     let starting_price = U128(10_000);
 
-    let deploy_new_auction: ExecutionFinalResult = contract
-        .call("deploy_new_auction")
+    let deploy_new_auction: ExecutionFinalResult = alice
+        .call(contract.id(), "deploy_new_auction")
         .args_json(
             json!({"name": "new-auction", "end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"ft_contract": ft_contract.id(),"nft_contract": nft_account.id(),"token_id":"1", "starting_price":starting_price }),
         )
         .max_gas()
-        .deposit(NearToken::from_near(5))
+        .deposit(NearToken::from_millinear(1600))
         .transact()
         .await?;
 
     assert!(deploy_new_auction.is_success());
-    
+
     let auction_account_id: AccountId = format!("new-auction.{}", contract.id())
         .parse()
         .unwrap();
@@ -112,6 +112,19 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(contract_account_balance, U128(50_000));
     let alice_balance_after_bid: U128 = ft_balance_of(&ft_contract, alice.id()).await?;
     assert_eq!(alice_balance_after_bid, U128(100_000));
+
+    // Try to launch a new auction with insufficient deposit
+    let deploy_new_auction: ExecutionFinalResult = alice
+        .call(contract.id(), "deploy_new_auction")
+        .args_json(
+            json!({"name": "new-auction", "end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.id(),"ft_contract": ft_contract.id(),"nft_contract": nft_account.id(),"token_id":"1", "starting_price":starting_price }),
+        )
+        .max_gas()
+        .deposit(NearToken::from_millinear(1400))
+        .transact()
+        .await?;
+
+    assert!(deploy_new_auction.is_failure());
 
     Ok(())
 }
