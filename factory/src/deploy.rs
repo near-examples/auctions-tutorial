@@ -43,7 +43,8 @@ impl Contract {
 
         let code = self.code.clone().unwrap();
         let contract_bytes = code.len() as u128;
-        let minimum_needed = NEAR_PER_STORAGE.saturating_mul(contract_bytes);
+        let contract_storage_cost = NEAR_PER_STORAGE.saturating_mul(contract_bytes);
+        let minimum_needed = contract_storage_cost.saturating_add(NearToken::from_millinear(100));
         assert!(
             attached >= minimum_needed,
             "Attach at least {minimum_needed} yⓃ"
