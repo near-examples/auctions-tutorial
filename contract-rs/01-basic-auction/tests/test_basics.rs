@@ -1,9 +1,16 @@
 use chrono::Utc;
-use contract_rs::Bid;
-use near_sdk::NearToken;
+use near_workspaces::types::{NearToken, AccountId};
 use serde_json::json;
+use near_sdk::near;
 
 const TEN_NEAR: NearToken = NearToken::from_near(10);
+
+#[near(serializers = [json])]
+#[derive(Clone)]
+pub struct Bid {
+    pub bidder: AccountId,
+    pub bid: NearToken,
+}
 
 #[tokio::test]
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
