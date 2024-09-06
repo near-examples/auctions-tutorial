@@ -1,10 +1,17 @@
 use chrono::Utc;
-use contract_rs::Bid;
-use near_sdk::{json_types::U128, NearToken};
-use near_sdk::{AccountId, Gas};
+use near_sdk::json_types::U128;
 use near_workspaces::result::ExecutionFinalResult;
 use near_workspaces::{Account, Contract};
 use serde_json::json;
+use near_workspaces::types::{NearToken, AccountId, Gas};
+use near_sdk::near;
+
+#[near(serializers = [json])]
+#[derive(Clone)]
+pub struct Bid {
+    pub bidder: AccountId,
+    pub bid: U128,
+}
 
 const TEN_NEAR: NearToken = NearToken::from_near(10);
 const FT_WASM_FILEPATH: &str = "./tests/fungible_token.wasm";

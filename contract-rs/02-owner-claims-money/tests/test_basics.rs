@@ -1,7 +1,14 @@
 use chrono::Utc;
-use contract_rs::Bid;
-use near_sdk::{Gas, NearToken};
 use serde_json::json;
+use near_workspaces::types::{NearToken, AccountId, Gas};
+use near_sdk::near;
+
+#[near(serializers = [json])]
+#[derive(Clone)]
+pub struct Bid {
+    pub bidder: AccountId,
+    pub bid: NearToken,
+}
 
 const TEN_NEAR: NearToken = NearToken::from_near(10);
 
