@@ -24,14 +24,18 @@ const Bid = ({ pastBids, ftName, ftImg, lastBidDisplay, ftDecimals, action}) => 
   return (
     <div className={styles.historyContainer}>
       <h3>History</h3>
-      <ul>
-        {pastBids?.map((bid, index) => (
-          <li key={index} className={styles.bidItem}>
-            <span> {bid[1] / Math.pow(10, ftDecimals)} {ftName} </span>
-            <span> {bid[0]} </span>
-          </li>
-        ))}
-      </ul>
+      {pastBids?.length === 0 ? (
+        <p>No bids have been placed yet</p>
+      ) : (
+        <ul>
+          {pastBids?.map((bid, index) => (
+            <li key={index} className={styles.bidItem}>
+              <span> {bid[1] / Math.pow(10, ftDecimals)} {ftName} </span>
+              <span> {bid[0]} </span>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className={styles.container}>
         <input
           type="number"
@@ -41,10 +45,9 @@ const Bid = ({ pastBids, ftName, ftImg, lastBidDisplay, ftDecimals, action}) => 
           className={styles.inputField}
         />
         <button className={styles.bidButton} onClick={handleBid}>
-        <img className={styles.iconFT} src={ftImg} alt={ftName} width="25" /> Bid
+          <img className={styles.iconFT} src={ftImg} alt={ftName} width="25" /> Bid
         </button>
       </div>
-
     </div>
   );
 }
