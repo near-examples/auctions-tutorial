@@ -9,64 +9,20 @@ import SkeletonBid from '@/components/Skeletons/SkeletonBid';
 import { NearContext } from '@/context';
 import { AUCTION_CONTRACT } from '@/config';
 import LastBid from '@/components/LastBid';
-import { useRouter } from 'next/router';
 
-export const getServerSideProps = async () => {
-  try {
-    // Get all bid transactions
-    const bidsRes = await fetch('https://api-testnet.nearblocks.io/v1/account/auction-example.testnet/txns?from=dai.fakes.testnet&method=ft_on_transfer&page=1&per_page=25&order=desc', {
-      headers: {
-        'Accept': '*/*',
-        'Authorization': `Bearer ${process.env.API_KEY}`
-      }
-    });
-    
-    const bidsJson = await bidsRes.json();
-
-    const txns = bidsJson.txns;
-    let pastBids = [];
-
-    // Loop through all bids and add valid bids to the pastBids array until 5 are found or the total number of bids is reached
-    for (let i = 0; i < txns.length; i++) {
-      const txn = txns[i];
-
-      if (txn.receipt_outcome.status) {
-        let args = txn.actions[0].args;
-        let parsedArgs = JSON.parse(args);
-        let amount = Number(parsedArgs.amount);
-        let account = parsedArgs.sender_id;
-  
-        if (pastBids.length < 5) {
-          pastBids.push([account, amount]);
-        } else {
-          break;
-        }
-      }
-    }
-
-    return {
-      props: {
-        pastBids
-      }
-    }
-  } catch (error) {
-    console.log("Failed to fetch past bids", error);
-  }
-}
- 
-
-export default function Home({pastBids}) {
+export default function Home() {
   const [auctionInfo, setAuctionInfo] = useState(null)
   const [nftInfo, setNftInfo] = useState(null)
   const [secondsRemaining, setSecondsRemaining] = useState(20)
+  const [ftContract, setFtContract] = useState("")
   const [ftName, setFtName] = useState("")
   const [ftImg, setFtImg] = useState("")
   const [ftDecimals, setFtDecimals] = useState(0)
   const [lastBidDisplay, setLastBidDisplay] = useState(0)
   const [validAuction, setValidAuction] = useState("Invalid Auction")
+  const [pastBids, setPastBids] = useState([])
 
   const { wallet } = useContext(NearContext);
-  const router = useRouter();
 
   useEffect(() => {
     const getInfo = async () => {
@@ -75,10 +31,12 @@ export default function Home({pastBids}) {
         method: "get_auction_info",
       });
       setAuctionInfo(data)
-      
-      router.replace(router.asPath); // Reload server side props
     }
     getInfo();
+
+    if (ftContract) {
+      fetchPastBids();
+    }
 
     const intervalId = setInterval(() => {
       getInfo();
@@ -120,11 +78,14 @@ export default function Home({pastBids}) {
         contractId: auctionInfo.ft_contract,
         method: "ft_metadata",
       });
+      setFtContract(auctionInfo.ft_contract)
       setFtName(ftInfo.symbol)
       setFtImg(ftInfo.icon)
       setFtDecimals(ftInfo.decimals)
       let bidAmount = auctionInfo.highest_bid.bid / Math.pow(10, ftInfo.decimals)
       setLastBidDisplay(bidAmount)
+
+      fetchPastBids();
     }
     if (auctionInfo) {
       getFtInfo();
@@ -150,6 +111,16 @@ export default function Home({pastBids}) {
       gas:"300000000000000"
     })
     return response
+  }
+
+  const fetchPastBids = async () => {
+    try {
+      const response = await fetch(`/api/getBidHistory?contractId=${AUCTION_CONTRACT}&ftId=${ftContract}`);
+      const data = await response.json();
+      setPastBids(data.pastBids);
+    } catch (error) {
+      console.log("Failed to fetch past bids", error);
+    }
   }
 
   return (
