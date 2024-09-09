@@ -1,5 +1,5 @@
 [package]
-name = "contract-rs"
+name = "auction"
 description = "Hello Near Example"
 version = "0.1.0"
 edition = "2021"
