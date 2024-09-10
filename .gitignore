@@ -13,7 +13,6 @@
 **/dist/
 **/.parcel-cache
 **/.next
-# **/.env.local 
-# Uncomment the line above to not expose API keys on GitHub
+**/.env.local 
 
 **/.DS_Store

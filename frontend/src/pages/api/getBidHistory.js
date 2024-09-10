@@ -1,5 +1,8 @@
 export default async function handler(req, res) {
     try {
+      if (!process.env.API_KEY) {
+        return res.status(500).json({ error: "API key not provided" });
+      }
       // Get all bid transactions
       const { contractId, ftId } = req.query;
       const bidsRes = await fetch(`https://api-testnet.nearblocks.io/v1/account/${contractId}/txns?from=${ftId}&method=ft_on_transfer&page=1&per_page=25&order=desc`, {

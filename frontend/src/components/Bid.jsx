@@ -24,14 +24,18 @@ const Bid = ({ pastBids, ftName, ftImg, lastBidDisplay, ftDecimals, action}) => 
   return (
     <div className={styles.historyContainer}>
       <h3>History</h3>
-      {pastBids?.length === 0 ? (
+      {typeof pastBids === 'string' ? (
+        <p className="error">{pastBids}</p>
+      ) : pastBids === null ? (
+        <p>Loading...</p> 
+      ) : pastBids.length === 0 ? (
         <p>No bids have been placed yet</p>
       ) : (
         <ul>
           {pastBids?.map((bid, index) => (
             <li key={index} className={styles.bidItem}>
-              <span> {bid[1] / Math.pow(10, ftDecimals)} {ftName} </span>
-              <span> {bid[0]} </span>
+              <span>{bid[1] / Math.pow(10, ftDecimals)} {ftName}</span>
+              <span>{bid[0]}</span>
             </li>
           ))}
         </ul>

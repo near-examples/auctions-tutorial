@@ -20,7 +20,7 @@ export default function Home() {
   const [ftDecimals, setFtDecimals] = useState(0)
   const [lastBidDisplay, setLastBidDisplay] = useState(0)
   const [validAuction, setValidAuction] = useState("Invalid Auction")
-  const [pastBids, setPastBids] = useState([])
+  const [pastBids, setPastBids] = useState(null)
 
   const { wallet } = useContext(NearContext);
 
@@ -114,13 +114,13 @@ export default function Home() {
   }
 
   const fetchPastBids = async () => {
-    try {
       const response = await fetch(`/api/getBidHistory?contractId=${AUCTION_CONTRACT}&ftId=${ftContract}`);
       const data = await response.json();
-      setPastBids(data.pastBids);
-    } catch (error) {
-      console.log("Failed to fetch past bids", error);
-    }
+      if (data.error) {
+        setPastBids(data.error);
+      } else {
+        setPastBids(data.pastBids);
+      }
   }
 
   return (
