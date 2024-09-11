@@ -9,7 +9,6 @@ const SkeletonBid = () => {
           <li key={index} className={styles.bidItem}>
             <div className={styles.skeletonText}></div>
             <div className={styles.skeletonText}></div>
-            <div className={styles.skeletonText}></div>
           </li>
         ))}
       </ul>
