@@ -7,7 +7,7 @@ mod manager;
 
 const NEAR_PER_STORAGE: NearToken = NearToken::from_yoctonear(10u128.pow(19)); // 10e19yⓃ
 const AUCTION_CONTRACT: &[u8] = include_bytes!("./auction-contract/auction.wasm");
-const TGAS: Gas = Gas::from_tgas(1); 
+const TGAS: Gas = Gas::from_tgas(1);
 const NO_DEPOSIT: NearToken = NearToken::from_near(0); // 0yⓃ
 
 // Define the contract structure

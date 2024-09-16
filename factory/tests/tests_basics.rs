@@ -65,24 +65,17 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(deploy_new_auction.is_success());
 
-    let auction_account_id: AccountId = format!("new-auction.{}", contract.id())
-        .parse()
-        .unwrap();
+    let auction_account_id: AccountId = format!("new-auction.{}", contract.id()).parse().unwrap();
 
     // Register accounts
-    for account_id in [
-        alice.id().clone(),
-        auction_account_id.clone(),
-    ]
-    .iter()
-    {
+    for account_id in [alice.id().clone(), auction_account_id.clone()].iter() {
         let register = ft_contract
             .call("storage_deposit")
             .args_json(serde_json::json!({ "account_id": account_id }))
             .deposit(NearToken::from_yoctonear(8000000000000000000000))
             .transact()
             .await?;
-    
+
         assert!(register.is_success());
     }
 
@@ -104,7 +97,11 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(alice_bid.is_success());
 
-    let highest_bid_alice: Bid = alice.view(&auction_account_id, "get_highest_bid").args_json({}).await?.json()?;
+    let highest_bid_alice: Bid = alice
+        .view(&auction_account_id, "get_highest_bid")
+        .args_json({})
+        .await?
+        .json()?;
     assert_eq!(highest_bid_alice.bid, U128(50_000));
     assert_eq!(highest_bid_alice.bidder, *alice.id());
 

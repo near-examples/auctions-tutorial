@@ -1,5 +1,5 @@
-use near_sdk::serde::Serialize;
 use near_sdk::json_types::{U128, U64};
+use near_sdk::serde::Serialize;
 use near_sdk::{env, log, near, AccountId, NearToken, Promise, PromiseError};
 
 use crate::{Contract, ContractExt, NEAR_PER_STORAGE, NO_DEPOSIT, TGAS};
