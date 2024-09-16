@@ -1,8 +1,8 @@
 use chrono::Utc;
-use near_workspaces::result::ExecutionFinalResult;
-use serde_json::json;
-use near_workspaces::types::{NearToken, AccountId, Gas};
 use near_sdk::near;
+use near_workspaces::result::ExecutionFinalResult;
+use near_workspaces::types::{AccountId, Gas, NearToken};
+use serde_json::json;
 
 #[near(serializers = [json])]
 #[derive(Clone)]
@@ -43,7 +43,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let request_payload = json!({
         "token_id": TOKEN_ID,
         "receiver_id": contract_account.id(),
-        "metadata": {
+        "token_metadata": {
             "title": "LEEROYYYMMMJENKINSSS",
             "description": "Alright time's up, let's do this.",
             "media": "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.Fhp4lHufCdTzTeGCAblOdgHaF7%26pid%3DApi&f=1"
