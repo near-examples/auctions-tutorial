@@ -2,46 +2,49 @@ import styles from '@/styles/app.module.css';
 import AuctionItem from '@/components/AuctionItem';
 import Timer from '@/components/Timer';
 import Bid from '@/components/Bid';
-import { getInfo as getInfoHistory } from '@/services/history.service.mock';
 import { useContext, useEffect, useState } from 'react';
 import SkeletonAuctionItem from '@/components/Skeletons/SkeletonAuctionItem';
 import SkeletonTimer from '@/components/Skeletons/SkeletonTimer';
 import SkeletonBid from '@/components/Skeletons/SkeletonBid';
 import { NearContext } from '@/context';
-import { AuctionContract } from '@/config';
+import { AUCTION_CONTRACT } from '@/config';
 import LastBid from '@/components/LastBid';
-
 
 export default function Home() {
   const [auctionInfo, setAuctionInfo] = useState(null)
   const [nftInfo, setNftInfo] = useState(null)
-  const [history, setHistory] = useState(null)
-  const [secondsRemaining, setSecondsRemaining] = useState(5)
+  const [secondsRemaining, setSecondsRemaining] = useState(20)
+  const [ftContract, setFtContract] = useState("")
   const [ftName, setFtName] = useState("")
   const [ftImg, setFtImg] = useState("")
   const [ftDecimals, setFtDecimals] = useState(0)
   const [lastBidDisplay, setLastBidDisplay] = useState(0)
   const [validAuction, setValidAuction] = useState("Invalid Auction")
+  const [pastBids, setPastBids] = useState(null)
 
   const { wallet } = useContext(NearContext);
 
   useEffect(() => {
     const getInfo = async () => {
       const data = await wallet.viewMethod({
-        contractId: AuctionContract,
+        contractId: AUCTION_CONTRACT,
         method: "get_auction_info",
       });
       setAuctionInfo(data)
     }
     getInfo();
 
+    if (ftContract) {
+      fetchPastBids();
+    }
+
     const intervalId = setInterval(() => {
       getInfo();
-      setSecondsRemaining(5);
-    }, 5000);
+      setSecondsRemaining(20);
+    }, 20000);
     
     const countdownIntervalId = setInterval(() => {
-      setSecondsRemaining(prev => (prev === 1 ? 5 : prev - 1));
+      setSecondsRemaining(prev => (prev === 1 ? 20 : prev - 1));
     }, 1000);
 
   
@@ -59,7 +62,7 @@ export default function Home() {
         args: { token_id: auctionInfo.token_id }
       });
       setNftInfo(data)
-      if (data.owner_id == AuctionContract) {
+      if (data.owner_id == AUCTION_CONTRACT) {
         setValidAuction("Valid Auction")
       }
     }
@@ -75,26 +78,19 @@ export default function Home() {
         contractId: auctionInfo.ft_contract,
         method: "ft_metadata",
       });
+      setFtContract(auctionInfo.ft_contract)
       setFtName(ftInfo.symbol)
       setFtImg(ftInfo.icon)
       setFtDecimals(ftInfo.decimals)
       let bidAmount = auctionInfo.highest_bid.bid / Math.pow(10, ftInfo.decimals)
       setLastBidDisplay(bidAmount)
+
+      fetchPastBids();
     }
     if (auctionInfo) {
       getFtInfo();
     }
   }, [auctionInfo]);
-
-  useEffect(() => {
-    const getHistoryInfo = async () => {
-      const data = await getInfoHistory();
-      setHistory(data)
-    }
-
-    getHistoryInfo();
-
-  }, [])
 
   const bid = async (amount) => {
     let real_amount = amount * Math.pow(10, ftDecimals)
@@ -102,7 +98,7 @@ export default function Home() {
       contractId: auctionInfo.ft_contract,
       method: "ft_transfer_call",
       deposit: 1,
-      args: { "receiver_id": AuctionContract, "amount": String(real_amount), "msg": "" },
+      args: { "receiver_id": AUCTION_CONTRACT, "amount": String(real_amount), "msg": "" },
       gas:"300000000000000"
     })
     return response
@@ -110,11 +106,21 @@ export default function Home() {
 
   const claim = async () => {
     let response = await wallet.callMethod({
-      contractId: AuctionContract,
+      contractId: AUCTION_CONTRACT,
       method: "claim",
       gas:"300000000000000"
     })
     return response
+  }
+
+  const fetchPastBids = async () => {
+      const response = await fetch(`/api/getBidHistory?contractId=${AUCTION_CONTRACT}&ftId=${ftContract}`);
+      const data = await response.json();
+      if (data.error) {
+        setPastBids(data.error);
+      } else {
+        setPastBids(data.pastBids);
+      }
   }
 
   return (
@@ -125,7 +131,7 @@ export default function Home() {
       </div>
       <div className={styles.rightPanel}>
         {!auctionInfo ? <SkeletonTimer /> : <Timer endTime={auctionInfo.auction_end_time} claimed={auctionInfo?.claimed} action={claim}/>}
-        {!auctionInfo ? <SkeletonBid /> : <Bid bids={history} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} action={bid}/>}
+        {!auctionInfo ? <SkeletonBid /> : <Bid pastBids={pastBids} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} ftDecimals={ftDecimals} action={bid}/>}
       </div>
     </main>
 
