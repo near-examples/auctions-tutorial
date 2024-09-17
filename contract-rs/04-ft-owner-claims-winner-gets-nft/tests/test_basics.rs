@@ -1,10 +1,17 @@
 use chrono::Utc;
-use contract_rs::Bid;
-use near_sdk::{json_types::U128, NearToken};
-use near_sdk::{AccountId, Gas};
+use near_sdk::json_types::U128;
+use near_sdk::near;
 use near_workspaces::result::ExecutionFinalResult;
+use near_workspaces::types::{AccountId, Gas, NearToken};
 use near_workspaces::{Account, Contract};
 use serde_json::json;
+
+#[near(serializers = [json])]
+#[derive(Clone)]
+pub struct Bid {
+    pub bidder: AccountId,
+    pub bid: U128,
+}
 
 const TEN_NEAR: NearToken = NearToken::from_near(10);
 const FT_WASM_FILEPATH: &str = "./tests/fungible_token.wasm";
@@ -54,7 +61,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     let request_payload = json!({
         "token_id": "1",
         "receiver_id": contract_account.id(),
-        "metadata": {
+        "token_metadata": {
             "title": "LEEROYYYMMMJENKINSSS",
             "description": "Alright time's up, let's do this.",
             "media": "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.Fhp4lHufCdTzTeGCAblOdgHaF7%26pid%3DApi&f=1"
