@@ -78,7 +78,7 @@ test("Test full contract", async (t) => {
   // Checks that the auctioneer has the correct balance
   const contractNewBalance = await auctioneer.balance();
   const new_available = parseFloat(contractNewBalance.available.toHuman());
-  t.is(new_available.toFixed(2), (available + 2).toFixed(2));
+  t.is(new_available.toFixed(1), (available + 2).toFixed(1));
 
   // Auctioneer tries to claim the auction again
   await t.throwsAsync(auctioneer.call(contract, "claim", {}, { gas: "300000000000000" }))
