@@ -13,14 +13,14 @@ const NO_DEPOSIT = BigInt(0);
 class AuctionContract {
   highest_bid: Bid = { bidder: '', bid: BigInt(1) };
   auction_end_time: bigint = BigInt(0);
-  auctioneer: string = "";
+  auctioneer: AccountId = "";
   claimed: boolean = false;
   ft_contract: AccountId = "";
   nft_contract: AccountId = "";
   token_id: string = "";
 
   @initialize({ privateFunction: true })
-  init({ end_time, auctioneer, ft_contract, nft_contract, token_id, starting_price }: { end_time: bigint, auctioneer: string, ft_contract: AccountId, nft_contract: AccountId, token_id: string, starting_price: bigint }) {
+  init({ end_time, auctioneer, ft_contract, nft_contract, token_id, starting_price }: { end_time: bigint, auctioneer: AccountId, ft_contract: AccountId, nft_contract: AccountId, token_id: string, starting_price: bigint }) {
     this.auction_end_time = end_time;
     this.highest_bid = { bidder: near.currentAccountId(), bid: starting_price };
     this.auctioneer = auctioneer;
