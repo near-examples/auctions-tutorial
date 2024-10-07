@@ -4,7 +4,7 @@ import styles from './Bid.module.css';
 import { toast } from 'react-toastify';
 
 const Bid = ({pastBids, lastBid, action}) => {
-  const [amount, setAmount] = useState(lastBidDisplay + 1);
+  const [amount, setAmount] = useState(lastBid + 1);
   const { signedAccountId } = useContext(NearContext);
   const nearMultiplier = Math.pow(10, 24)
 
@@ -48,9 +48,7 @@ const Bid = ({pastBids, lastBid, action}) => {
           min={lastBid}
           onChange={(e) => setAmount(e.target.value)}
           className={styles.inputField}
-        > 
-          $NEAR 
-        </input>
+        /> 
         <button className={styles.bidButton} onClick={handleBid}>
           Bid
         </button>

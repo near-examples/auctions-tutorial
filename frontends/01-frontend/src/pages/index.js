@@ -2,7 +2,6 @@ import styles from '@/styles/app.module.css';
 import Timer from '@/components/Timer';
 import Bid from '@/components/Bid';
 import { useContext, useEffect, useState } from 'react';
-import SkeletonAuctionItem from '@/components/Skeletons/SkeletonAuctionItem';
 import SkeletonTimer from '@/components/Skeletons/SkeletonTimer';
 import SkeletonBid from '@/components/Skeletons/SkeletonBid';
 import { NearContext } from '@/context';
@@ -83,7 +82,7 @@ export default function Home() {
   }
 
   const fetchPastBids = async () => {
-      const response = await fetch(`/api/getBidHistory?contractId=${AUCTION_CONTRACT}&ftId=${ftContract}`);
+      const response = await fetch(`/api/getBidHistory?contractId=${AUCTION_CONTRACT}`);
       const data = await response.json();
       if (data.error) {
         setPastBids(data.error);
@@ -95,11 +94,11 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <div className={styles.leftPanel}>
-      {!auctionInfo ? <SkeletonBid /> : <Bid pastBids={pastBids} lastBid={highestBid} action={bid}/>}
+      {!highestBid ? <SkeletonBid /> : <Bid pastBids={pastBids} lastBid={highestBid} action={bid}/>}
       </div>
       <div className={styles.rightPanel}>
-        {!auctionInfo ? <SkeletonTimer /> : <Timer endTime={auctionEndTime} claimed={claimed} action={claim}/>}
-        {!auctionInfo ? <SkeletonAuctionItem /> : <LastBid lastBid={highestBid} highestBidder={highestBidder} lastUpdate={secondsRemaining}/>} 
+        {!auctionEndTime ? <SkeletonTimer /> : <Timer endTime={auctionEndTime} claimed={claimed} action={claim}/>}
+        {!highestBidder ? <SkeletonBid /> : <LastBid lastBid={highestBid} highestBidder={highestBidder} lastUpdate={secondsRemaining}/>} 
       </div>
     </main>
 

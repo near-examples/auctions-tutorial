@@ -4,11 +4,11 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "API key not provided" });
       }
       // Get all bid transactions
-      const { contractId, ftId } = req.query;
-      const bidsRes = await fetch(`https://api-testnet.nearblocks.io/v1/account/${contractId}/txns?from=${ftId}&method=ft_on_transfer&page=1&per_page=25&order=desc`, {
+      const { contractId } = req.query;
+      const bidsRes = await fetch(`https://api-testnet.nearblocks.io/v1/account/${contractId}/txns?method=bid&page=1&per_page=25&order=desc`, {
         headers: {
           'Accept': '*/*',
-          'Authorization': `Bearer ${process.env.API_KEY}` // Use your API key here
+          'Authorization': `Bearer ${process.env.API_KEY}`
         }
       });
       
@@ -22,11 +22,9 @@ export default async function handler(req, res) {
         const txn = txns[i];
   
         if (txn.receipt_outcome.status) {
-          let args = txn.actions[0].args;
-          let parsedArgs = JSON.parse(args);
-          let amount = Number(parsedArgs.amount);
-          let account = parsedArgs.sender_id;
-  
+          let amount = txn.actions[0].deposit;
+          let account = txn.predecessor_account_id
+
           if (pastBids.length < 5) {
             pastBids.push([account, amount]);
           } else {

@@ -8,7 +8,7 @@ export default async function handler(req, res) {
       const bidsRes = await fetch(`https://api-testnet.nearblocks.io/v1/account/${contractId}/txns?from=${ftId}&method=ft_on_transfer&page=1&per_page=25&order=desc`, {
         headers: {
           'Accept': '*/*',
-          'Authorization': `Bearer ${process.env.API_KEY}` // Use your API key here
+          'Authorization': `Bearer ${process.env.API_KEY}`
         }
       });
       

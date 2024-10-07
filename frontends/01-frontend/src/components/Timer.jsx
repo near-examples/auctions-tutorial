@@ -44,20 +44,23 @@ const Timer = ({ endTime, claimed, action }) => {
             <h2>Auction has been claimed!</h2>
         </div>}
       {showCounter && (
-        <div className={styles.timer}>
-          <div>
-            <span>{String(days).padStart(2, '0')}</span> Days
-          </div>
-          <div>
-            <span>{String(hours).padStart(2, '0')}</span> Hours
-          </div>
-          <div>
-            <span>{String(minutes).padStart(2, '0')}</span> Minutes
-          </div>
-          <div>
-            <span>{String(seconds).padStart(2, '0')}</span> Seconds
-          </div>
-        </div>
+       <div className={styles.timerContainer}>
+       <h4>Time Remaining: </h4>
+       <div className={styles.timer}>
+         <div>
+           <span>{String(days).padStart(2, '0')}</span> Days
+         </div>
+         <div>
+           <span>{String(hours).padStart(2, '0')}</span> Hours
+         </div>
+         <div>
+           <span>{String(minutes).padStart(2, '0')}</span> Minutes
+         </div>
+         <div>
+           <span>{String(seconds).padStart(2, '0')}</span> Seconds
+         </div>
+       </div>
+     </div>
       )}
       {showActionButton  && 
        <div className={styles.timer}>
