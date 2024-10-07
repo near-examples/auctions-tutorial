@@ -3,9 +3,10 @@ import { NearContext } from '@/context';
 import styles from './Bid.module.css';
 import { toast } from 'react-toastify';
 
-const Bid = ({ pastBids, ftName, ftImg, lastBidDisplay, ftDecimals, action}) => {
+const Bid = ({pastBids, lastBid, action}) => {
   const [amount, setAmount] = useState(lastBidDisplay + 1);
   const { signedAccountId } = useContext(NearContext);
+  const nearMultiplier = Math.pow(10, 24)
 
   const handleBid = async () => {
     if (signedAccountId) {
@@ -17,9 +18,9 @@ const Bid = ({ pastBids, ftName, ftImg, lastBidDisplay, ftDecimals, action}) => 
   }
 
   useEffect(() => {
-    setAmount(lastBidDisplay + 1);
+    setAmount(lastBid + 1);
   }
-  , [lastBidDisplay]);
+  , [lastBid]);
 
   return (
     <div className={styles.historyContainer}>
@@ -34,7 +35,7 @@ const Bid = ({ pastBids, ftName, ftImg, lastBidDisplay, ftDecimals, action}) => 
         <ul>
           {pastBids?.map((bid, index) => (
             <li key={index} className={styles.bidItem}>
-              <span>{bid[1] / Math.pow(10, ftDecimals)} {ftName}</span>
+              <span>{bid[1] / nearMultiplier} $NEAR</span>
               <span>{bid[0]}</span>
             </li>
           ))}
@@ -44,12 +45,14 @@ const Bid = ({ pastBids, ftName, ftImg, lastBidDisplay, ftDecimals, action}) => 
         <input
           type="number"
           value={amount}
-          min={lastBidDisplay}
+          min={lastBid}
           onChange={(e) => setAmount(e.target.value)}
           className={styles.inputField}
-        />
+        > 
+          $NEAR 
+        </input>
         <button className={styles.bidButton} onClick={handleBid}>
-          <img className={styles.iconFT} src={ftImg} alt={ftName} width="25" /> Bid
+          Bid
         </button>
       </div>
     </div>

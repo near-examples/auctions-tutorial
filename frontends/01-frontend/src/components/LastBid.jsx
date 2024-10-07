@@ -1,13 +1,12 @@
 import styles from './LastBid.module.css';
 
-const LastBid = ({lastBid, lastUpdate, ftName, ftImg, lastBidDisplay }) => {
+const LastBid = ({lastBid, highestBidder, lastUpdate}) => {
   return (
     <div className={styles.priceSection}>
         <div className={styles.detail}>       
-          <span className={styles.currentPrice}>The last bid was {lastBidDisplay} {ftName} </span>
-          <img className={styles.iconFT} src={ftImg} alt={ftName} width="25" />
+          <span className={styles.currentPrice}>The last bid was {lastBid} $NEAR </span>
         </div>
-        <span>Made by {lastBid.bidder} </span>
+        <span>Made by {highestBidder} </span>
         <span>Refresh page in {lastUpdate}</span>
     </div>
   )

@@ -1,5 +1,4 @@
 import styles from '@/styles/app.module.css';
-import AuctionItem from '@/components/AuctionItem';
 import Timer from '@/components/Timer';
 import Bid from '@/components/Bid';
 import { useContext, useEffect, useState } from 'react';
@@ -11,32 +10,40 @@ import { AUCTION_CONTRACT } from '@/config';
 import LastBid from '@/components/LastBid';
 
 export default function Home() {
-  const [auctionInfo, setAuctionInfo] = useState(null)
-  const [nftInfo, setNftInfo] = useState(null)
+  const [highestBid, setHighestBid] = useState(null)
+  const [highestBidder, setHighestBidder] = useState(null)
+  const [claimed, setClaimed] = useState(false)
+  const [auctionEndTime, setAuctionEndTime] = useState(null)
   const [secondsRemaining, setSecondsRemaining] = useState(20)
-  const [ftContract, setFtContract] = useState("")
-  const [ftName, setFtName] = useState("")
-  const [ftImg, setFtImg] = useState("")
-  const [ftDecimals, setFtDecimals] = useState(0)
-  const [lastBidDisplay, setLastBidDisplay] = useState(0)
-  const [validAuction, setValidAuction] = useState("Invalid Auction")
   const [pastBids, setPastBids] = useState(null)
+  const nearMultiplier = Math.pow(10, 24)
 
   const { wallet } = useContext(NearContext);
 
   useEffect(() => {
     const getInfo = async () => {
-      const data = await wallet.viewMethod({
+      const highestBidData = await wallet.viewMethod({
         contractId: AUCTION_CONTRACT,
-        method: "get_auction_info",
+        method: "get_highest_bid",
       });
-      setAuctionInfo(data)
+      setHighestBid(highestBidData.bid / nearMultiplier)
+      setHighestBidder(highestBidData.bidder)
+
+      const claimedData = await wallet.viewMethod({
+        contractId: AUCTION_CONTRACT,
+        method: "get_claimed",
+      });
+      setClaimed(claimedData)
+
+      const auctionEndTimeData = await wallet.viewMethod({
+        contractId: AUCTION_CONTRACT,
+        method: "get_auction_end_time",
+      });
+      setAuctionEndTime(auctionEndTimeData)
     }
     getInfo();
 
-    if (ftContract) {
-      fetchPastBids();
-    }
+    fetchPastBids();
 
     const intervalId = setInterval(() => {
       getInfo();
@@ -54,51 +61,13 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    const getNftInfo = async () => {
-      const data = await await wallet.viewMethod({
-        contractId: auctionInfo.nft_contract,
-        method: "nft_token",
-        args: { token_id: auctionInfo.token_id }
-      });
-      setNftInfo(data)
-      if (data.owner_id == AUCTION_CONTRACT) {
-        setValidAuction("Valid Auction")
-      }
-    }
-    if (auctionInfo) {
-      getNftInfo();
-    }
-
-  }, [auctionInfo]);
-
-  useEffect(() => {
-    const getFtInfo = async () => {
-      const ftInfo = await await wallet.viewMethod({
-        contractId: auctionInfo.ft_contract,
-        method: "ft_metadata",
-      });
-      setFtContract(auctionInfo.ft_contract)
-      setFtName(ftInfo.symbol)
-      setFtImg(ftInfo.icon)
-      setFtDecimals(ftInfo.decimals)
-      let bidAmount = auctionInfo.highest_bid.bid / Math.pow(10, ftInfo.decimals)
-      setLastBidDisplay(bidAmount)
-
-      fetchPastBids();
-    }
-    if (auctionInfo) {
-      getFtInfo();
-    }
-  }, [auctionInfo]);
-
   const bid = async (amount) => {
-    let real_amount = amount * Math.pow(10, ftDecimals)
+    let real_amount = amount * nearMultiplier
     let response = await wallet.callMethod({
-      contractId: auctionInfo.ft_contract,
-      method: "ft_transfer_call",
-      deposit: 1,
-      args: { "receiver_id": AUCTION_CONTRACT, "amount": String(real_amount), "msg": "" },
+      contractId: AUCTION_CONTRACT,
+      method: "bid",
+      deposit: real_amount,
+      args: {},
       gas:"300000000000000"
     })
     return response
@@ -126,12 +95,11 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <div className={styles.leftPanel}>
-        {!auctionInfo ? <SkeletonAuctionItem /> : <LastBid lastBid={auctionInfo?.highest_bid} lastUpdate={secondsRemaining} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay}/>} 
-        {!auctionInfo ? <SkeletonAuctionItem /> : <AuctionItem nftMetadata={nftInfo?.metadata} validAuction={validAuction}/>}
+      {!auctionInfo ? <SkeletonBid /> : <Bid pastBids={pastBids} lastBid={highestBid} action={bid}/>}
       </div>
       <div className={styles.rightPanel}>
-        {!auctionInfo ? <SkeletonTimer /> : <Timer endTime={auctionInfo.auction_end_time} claimed={auctionInfo?.claimed} action={claim}/>}
-        {!auctionInfo ? <SkeletonBid /> : <Bid pastBids={pastBids} ftName={ftName} ftImg={ftImg} lastBidDisplay={lastBidDisplay} ftDecimals={ftDecimals} action={bid}/>}
+        {!auctionInfo ? <SkeletonTimer /> : <Timer endTime={auctionEndTime} claimed={claimed} action={claim}/>}
+        {!auctionInfo ? <SkeletonAuctionItem /> : <LastBid lastBid={highestBid} highestBidder={highestBidder} lastUpdate={secondsRemaining}/>} 
       </div>
     </main>
 
