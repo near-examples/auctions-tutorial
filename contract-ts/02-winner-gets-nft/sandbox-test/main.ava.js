@@ -98,9 +98,7 @@ test("Test full contract", async (t) => {
 
   // Checks that the auctioneer has the correct balance
   const contractNewBalance = await auctioneer.balance();
-  console.log("contractNewBalance", contractNewBalance);
   const new_available = parseFloat(contractNewBalance.available.toHuman());
-  console.log("new_available", new_available);
   t.is(new_available.toFixed(1), (available + 2).toFixed(1));
 
   // Check highest bidder received the NFT
