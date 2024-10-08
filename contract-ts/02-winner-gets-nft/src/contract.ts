@@ -58,6 +58,11 @@ class AuctionContract {
   get_auction_end_time(): BigInt {
     return this.auction_end_time;
   }
+  
+  @view({})
+  get_auction_info(): AuctionContract {
+    return this;
+  }
 
   @call({})
   claim() {

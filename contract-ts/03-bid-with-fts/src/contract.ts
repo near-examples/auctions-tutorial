@@ -29,30 +29,6 @@ class AuctionContract {
     this.token_id = token_id;
   }
 
-  @view({})
-  get_highest_bid(): Bid {
-    return this.highest_bid;
-  }
-
-  @view({})
-  get_auction_end_time(): BigInt {
-    return this.auction_end_time;
-  }
-
-  @call({})
-  claim() {
-    assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
-    assert(!this.claimed, "Auction has been claimed");
-
-    this.claimed = true;
-
-    return NearPromise.new(this.nft_contract)
-      .functionCall("nft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }), BigInt(1), THIRTY_TGAS)
-      .then(NearPromise.new(this.ft_contract)
-      .functionCall("ft_transfer", JSON.stringify({ receiver_id: this.auctioneer, amount: this.highest_bid.bid }), BigInt(1), THIRTY_TGAS))
-      .asReturn()
-  }
-
   @call({})
   ft_on_transfer({ sender_id, amount, msg }: { sender_id: AccountId, amount: bigint, msg: String }) {
 
@@ -75,8 +51,37 @@ class AuctionContract {
       .asReturn()
   }
 
+  @call({})
+  claim() {
+    assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
+    assert(!this.claimed, "Auction has been claimed");
+
+    this.claimed = true;
+
+    return NearPromise.new(this.nft_contract)
+      .functionCall("nft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }), BigInt(1), THIRTY_TGAS)
+      .then(NearPromise.new(this.ft_contract)
+      .functionCall("ft_transfer", JSON.stringify({ receiver_id: this.auctioneer, amount: this.highest_bid.bid }), BigInt(1), THIRTY_TGAS))
+      .asReturn()
+  }
+
   @call({ privateFunction: true })
   ft_transfer_callback({ }): BigInt {
     return BigInt(0);
+  }
+
+  @view({})
+  get_highest_bid(): Bid {
+    return this.highest_bid;
+  }
+
+  @view({})
+  get_auction_end_time(): BigInt {
+    return this.auction_end_time;
+  }
+
+  @view({})
+  get_auction_info(): AuctionContract {
+    return this;
   }
 }

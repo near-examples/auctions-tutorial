@@ -42,6 +42,14 @@ class AuctionContract {
     return NearPromise.new(lastBidder).transfer(lastBid);
   }
 
+  @call({})
+  claim() {
+    assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
+    assert(!this.claimed, "Auction has been claimed");
+    this.claimed = true;
+    return NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid)
+  }
+
   @view({})
   get_highest_bid(): Bid {
     return this.highest_bid;
@@ -53,20 +61,7 @@ class AuctionContract {
   }
 
   @view({})
-  get_auctioneer(): AccountId {
-    return this.auctioneer;
-  }
-
-  @view({})
   get_claimed(): boolean {
     return this.claimed;
-  }
-
-  @call({})
-  claim() {
-    assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
-    assert(!this.claimed, "Auction has been claimed");
-    this.claimed = true;
-    return NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid)
   }
 }
