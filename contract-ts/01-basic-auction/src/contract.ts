@@ -61,6 +61,11 @@ class AuctionContract {
   }
 
   @view({})
+  get_auctioneer(): AccountId {
+    return this.auctioneer;
+  }
+
+  @view({})
   get_claimed(): boolean {
     return this.claimed;
   }
