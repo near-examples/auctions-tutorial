@@ -5,12 +5,12 @@ import { NearContext } from '@/context';
 import { Navigation } from '@/components/Navigation';
 
 import { Wallet } from '@/wallets/near';
-import { NetworkId, AuctionContract } from '@/config';
+import { NetworkId } from '@/config';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const wallet = new Wallet({ createAccessKeyFor: AuctionContract, networkId: NetworkId });
+const wallet = new Wallet({ networkId: NetworkId });
 
 export default function MyApp({ Component, pageProps }) {
   const [signedAccountId, setSignedAccountId] = useState('');
