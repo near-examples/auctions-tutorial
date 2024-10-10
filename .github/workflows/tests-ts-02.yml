@@ -14,6 +14,6 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install and test modules
         run: |
-          cd ./contract-ts/02-owner-claims-money
+          cd ./contract-ts/02-winner-gets-nft
           yarn
           yarn test

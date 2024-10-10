@@ -7,6 +7,7 @@ import { setDefaultResultOrder } from 'dns'; setDefaultResultOrder('ipv4first');
  *  @type {import('ava').TestFn<{worker: Worker, accounts: Record<string, NearAccount>}>}
  */
 const test = anyTest;
+const NFT_WASM_FILEPATH = "./sandbox-test/non_fungible_token.wasm";
 test.beforeEach(async (t) => {
   // Init the worker and start a Sandbox server
   const worker = t.context.worker = await Worker.init();
@@ -19,6 +20,24 @@ test.beforeEach(async (t) => {
   const auctioneer = await root.createSubAccount("auctioneer", { initialBalance: NEAR.parse("10 N").toString() });
   const contract = await root.createSubAccount("contract", { initialBalance: NEAR.parse("10 N").toString() });
 
+  // Deploy and initialize NFT contract 
+  const nft_contract = await root.devDeploy(NFT_WASM_FILEPATH);
+  await nft_contract.call(nft_contract, "new_default_meta", { "owner_id": nft_contract.accountId });
+
+  // Mint NFT
+  const TOKEN_ID = "1";
+  let request_payload = {
+    "token_id": TOKEN_ID,
+    "receiver_id": contract.accountId,
+    "metadata": {
+      "title": "LEEROYYYMMMJENKINSSS",
+      "description": "Alright time's up, let's do this.",
+      "media": "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.Fhp4lHufCdTzTeGCAblOdgHaF7%26pid%3DApi&f=1"
+    },
+  };
+
+  await nft_contract.call(nft_contract, "nft_mint", request_payload, { attachedDeposit: NEAR.from("8000000000000000000000").toString(), gas: "300000000000000" });
+
   // Deploy contract (input from package.json)
   await contract.deploy(process.argv[2]);
 
@@ -26,11 +45,13 @@ test.beforeEach(async (t) => {
   await contract.call(contract, "init", {
     end_time: String((Date.now() + 60000) * 10 ** 6),
     auctioneer: auctioneer.accountId,
+    nft_contract: nft_contract.accountId,
+    token_id: TOKEN_ID
   });
 
   // Save state for test runs, it is unique for each test
   t.context.worker = worker;
-  t.context.accounts = { alice, bob, contract, auctioneer };
+  t.context.accounts = { alice, bob, contract, auctioneer, nft_contract };
 });
 
 test.afterEach.always(async (t) => {
@@ -41,7 +62,7 @@ test.afterEach.always(async (t) => {
 });
 
 test("Test full contract", async (t) => {
-  const { alice, bob, auctioneer, contract } = t.context.accounts;
+  const { alice, bob, auctioneer, contract, nft_contract } = t.context.accounts;
 
   // Alice makes first bid
   await alice.call(contract, "bid", {}, { attachedDeposit: NEAR.parse("1 N").toString() });
@@ -79,6 +100,10 @@ test("Test full contract", async (t) => {
   const contractNewBalance = await auctioneer.balance();
   const new_available = parseFloat(contractNewBalance.available.toHuman());
   t.is(new_available.toFixed(1), (available + 2).toFixed(1));
+
+  // Check highest bidder received the NFT
+  const response = await nft_contract.call(nft_contract, "nft_token",{"token_id": "1"},{ gas: "300000000000000" });
+  t.is(response.owner_id,bob.accountId);
 
   // Auctioneer tries to claim the auction again
   await t.throwsAsync(auctioneer.call(contract, "claim", {}, { gas: "300000000000000" }))

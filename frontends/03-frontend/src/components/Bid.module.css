@@ -1,0 +1,54 @@
+.historyContainer {
+  /* border: 1px solid #ddd; */
+  border-radius: 8px;
+  padding: 1rem;
+  width: 400px;
+  text-align: center;
+}
+
+.bidItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.bidItem:last-child {
+  border-bottom: none;
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Adds spacing between the input and button */
+}
+
+.inputField {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+}
+
+.bidButton {
+  background-color: #1679AB;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  display: flex;
+  align-items: center; /* Center the icon and text vertically */
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.bidButton:hover {
+  background-color: #102C57;
+}
+
+.iconFT {
+  margin-right: 10px;
+}
