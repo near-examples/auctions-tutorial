@@ -49,6 +49,17 @@ class AuctionContract {
     return NearPromise.new(lastBidder).transfer(lastBid);
   }
 
+  @call({})
+  claim() {
+    assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
+    assert(!this.claimed, "Auction has been claimed");
+    this.claimed = true;
+
+    return NearPromise.new(this.nft_contract)
+      .functionCall("nft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }), BigInt(1), TWENTY_TGAS)
+      .then(NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid))
+  }
+
   @view({})
   get_highest_bid(): Bid {
     return this.highest_bid;
@@ -62,16 +73,5 @@ class AuctionContract {
   @view({})
   get_auction_info(): AuctionContract {
     return this;
-  }
-
-  @call({})
-  claim() {
-    assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
-    assert(!this.claimed, "Auction has been claimed");
-    this.claimed = true;
-
-    return NearPromise.new(this.nft_contract)
-      .functionCall("nft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }), BigInt(1), TWENTY_TGAS)
-      .then(NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid))
   }
 }
