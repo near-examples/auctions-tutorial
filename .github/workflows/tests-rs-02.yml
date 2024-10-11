@@ -10,5 +10,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install and test modules
         run: |
-          cd ./contract-rs/02-owner-claims-money
+          cd ./contract-rs/02-winner-gets-nft
           cargo test

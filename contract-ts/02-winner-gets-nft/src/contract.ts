@@ -6,18 +6,25 @@ class Bid {
   bid: bigint;
 }
 
+const TWENTY_TGAS = BigInt("20000000000000");
+const NO_DEPOSIT = BigInt(0);
+
 @NearBindgen({ requireInit: true })
 class AuctionContract {
   highest_bid: Bid = { bidder: '', bid: BigInt(0) };
   auction_end_time: bigint = BigInt(0);
   auctioneer: AccountId = "";
   claimed: boolean = false;
+  nft_contract: AccountId = "";
+  token_id: string = "";
 
   @initialize({ privateFunction: true })
-  init({ end_time, auctioneer}: { end_time: bigint, auctioneer: AccountId}) {
+  init({ end_time, auctioneer, nft_contract, token_id }: { end_time: bigint, auctioneer: AccountId, nft_contract: AccountId, token_id: string }) {
     this.auction_end_time = end_time;
     this.highest_bid = { bidder: near.currentAccountId(), bid: BigInt(1) };
     this.auctioneer = auctioneer;
+    this.nft_contract = nft_contract;
+    this.token_id = token_id;
   }
 
   @call({ payableFunction: true })
@@ -47,7 +54,10 @@ class AuctionContract {
     assert(this.auction_end_time <= near.blockTimestamp(), "Auction has not ended yet");
     assert(!this.claimed, "Auction has been claimed");
     this.claimed = true;
-    return NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid)
+
+    return NearPromise.new(this.nft_contract)
+      .functionCall("nft_transfer", JSON.stringify({ receiver_id: this.highest_bid.bidder, token_id: this.token_id }), BigInt(1), TWENTY_TGAS)
+      .then(NearPromise.new(this.auctioneer).transfer(this.highest_bid.bid))
   }
 
   @view({})
@@ -59,14 +69,9 @@ class AuctionContract {
   get_auction_end_time(): BigInt {
     return this.auction_end_time;
   }
-
+  
   @view({})
-  get_auctioneer(): AccountId {
-    return this.auctioneer;
-  }
-
-  @view({})
-  get_claimed(): boolean {
-    return this.claimed;
+  get_auction_info(): AuctionContract {
+    return this;
   }
 }

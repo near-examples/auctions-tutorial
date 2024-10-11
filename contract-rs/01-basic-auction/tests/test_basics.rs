@@ -1,9 +1,7 @@
 use chrono::Utc;
-use near_workspaces::types::{NearToken, AccountId};
-use serde_json::json;
 use near_sdk::near;
-
-const TEN_NEAR: NearToken = NearToken::from_near(10);
+use near_workspaces::types::{AccountId, Gas, NearToken};
+use serde_json::json;
 
 #[near(serializers = [json])]
 #[derive(Clone)]
@@ -11,6 +9,8 @@ pub struct Bid {
     pub bidder: AccountId,
     pub bid: NearToken,
 }
+
+const TEN_NEAR: NearToken = NearToken::from_near(10);
 
 #[tokio::test]
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,6 +21,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     // Create accounts
     let alice = create_subaccount(&root, "alice").await?;
     let bob = create_subaccount(&root, "bob").await?;
+    let auctioneer = create_subaccount(&root, "auctioneer").await?;
     let contract_account = create_subaccount(&root, "contract").await?;
 
     // Deploy and initialize contract
@@ -32,7 +33,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let init = contract
         .call("init")
-        .args_json(json!({"end_time": a_minute_from_now.to_string()}))
+        .args_json(json!({"end_time": a_minute_from_now.to_string(),"auctioneer":auctioneer.id()}))
         .transact()
         .await?;
 
@@ -68,7 +69,7 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(highest_bid.bid, NearToken::from_near(2));
     assert_eq!(highest_bid.bidder, *bob.id());
 
-    // Check that alice was returned her bid
+    // Check that Alice was returned her bid
     let new_alice_balance = alice.view_account().await?.balance;
     assert!(new_alice_balance == alice_balance.saturating_add(NearToken::from_near(1)));
 
@@ -81,9 +82,44 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     assert!(alice_bid.is_failure());
 
+    // Auctioneer claims auction but did not finish
+    let auctioneer_claim = auctioneer
+        .call(contract_account.id(), "claim")
+        .args_json(json!({}))
+        .gas(Gas::from_tgas(300))
+        .transact()
+        .await?;
+
+    assert!(auctioneer_claim.is_failure());
+
     // Fast forward 200 blocks
     let blocks_to_advance = 200;
     sandbox.fast_forward(blocks_to_advance).await?;
+
+    // Auctioneer claims the auction
+    let auctioneer_claim = auctioneer
+        .call(contract_account.id(), "claim")
+        .args_json(json!({}))
+        .gas(Gas::from_tgas(300))
+        .transact()
+        .await?;
+
+    assert!(auctioneer_claim.is_success());
+
+    // Checks the auctioneer has the correct balance
+    let auctioneer_balance = auctioneer.view_account().await?.balance;
+    assert!(auctioneer_balance <= NearToken::from_near(12));
+    assert!(auctioneer_balance > NearToken::from_millinear(11990));
+
+    // Auctioneer tries to claim the auction again
+    let auctioneer_claim = auctioneer
+        .call(contract_account.id(), "claim")
+        .args_json(json!({}))
+        .gas(Gas::from_tgas(300))
+        .transact()
+        .await?;
+
+    assert!(auctioneer_claim.is_failure());
 
     // Alice tries to make a bid when the auction is over
     let alice_bid = alice
