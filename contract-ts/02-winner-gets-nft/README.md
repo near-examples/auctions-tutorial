@@ -1,6 +1,6 @@
 # NFT Auction Contract
 
-This directory contains a JavaScript contract that is used as part of the [Winning an NFT](https://docs.near.org/tutorials/auction/winning-an-nft) part of the auction tutorial.
+This directory contains a JavaScript contract that is used as part of the [Winning an NFT](https://docs.near.org/tutorials/auction/winning-an-nft) section of the auction tutorial.
 
 In this part the contract is adapted so the auction is initialized with an NFT and the winner of the auction is sent the NFT. It is a great way to learn how to work with NFTs in NEAR.
 

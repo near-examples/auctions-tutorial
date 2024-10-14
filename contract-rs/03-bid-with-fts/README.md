@@ -1,6 +1,6 @@
 # Auction contract with FTs
 
-This directory contains a Rust contract that is used as part of the [Bidding with FTs](https://docs.near.org/tutorials/auction/bidding-with-fts) part of the auction tutorial.
+This directory contains a Rust contract that is used as part of the [Bidding with FTs](https://docs.near.org/tutorials/auction/bidding-with-fts) section of the auction tutorial.
 
 In this part the contract is adapted so users can bid in fungible tokens (FTs) instead of NEAR tokens. It is a great way to learn how to work with FTs in NEAR.
 

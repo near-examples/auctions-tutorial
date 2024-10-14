@@ -4,7 +4,7 @@ This directory contains a JavaScript contract that is used as part of the [Basic
 
 The contract is a simple auction where you can place bids, view the highest bid, and claim the tokens at the end of the auction.
 
-This repo showcases the basic anatomy of a contract including how to store data in a contract, how to update the state, and then how to view it. It also shows you how to use environment variables and macros. We have also written sandbox test the contract locally.
+This repo showcases the basic anatomy of a contract including how to store data in a contract, how to update the state, and then how to view it. It also looks at how to use environment variables and macros. We have also written sandbox test the contract locally.
 
 ---
 
