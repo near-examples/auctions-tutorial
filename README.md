@@ -1,4 +1,4 @@
-# Auction Tutorial 🧑‍⚖️ 
+# Auctions Tutorial 🧑‍⚖️ 
 [![](https://img.shields.io/badge/⋈%20Examples-Basics-green)](https://docs.near.org/tutorials/welcome)
 [![](https://img.shields.io/badge/Contract-JS-yellow)](contract-ts)
 [![](https://img.shields.io/badge/Contract-Rust-red)](contract-rs)
