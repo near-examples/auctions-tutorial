@@ -1,6 +1,8 @@
-# contract-rs
+# Auction contract with FTs
 
-cargo-near-new-project-description
+This directory contains a Rust contract that is used as part of the [Bidding with FTs](https://docs.near.org/tutorials/auction/bidding-with-fts) part of the auction tutorial.
+
+In this part the contract is adapted so users can bid in fungible tokens (FTs) instead of NEAR tokens. It is a great way to learn how to work with FTs in NEAR.
 
 ## How to Build Locally?
 
@@ -18,22 +20,17 @@ cargo test
 
 ## How to Deploy?
 
-To deploy manually, install [`cargo-near`](https://github.com/near/cargo-near) and run:
+To deploy manually, install [NEAR CLI](https://docs.near.org/tools/near-cli#installation) and run:
 
 ```bash
 # Create a new account
-cargo near create-dev-account
+near create <contractId> --useFaucet
 
 # Deploy the contract on it
-cargo near deploy <account-id>
-```
-## Useful Links
+MINUTE_FROM_NOW=$(date -v+2M +%s000000000)
+cargo near deploy <contractId> 
 
-- [cargo-near](https://github.com/near/cargo-near) - NEAR smart contract development toolkit for Rust
-- [near CLI](https://near.cli.rs) - Iteract with NEAR blockchain from command line
-- [NEAR Rust SDK Documentation](https://docs.near.org/sdk/rust/introduction)
-- [NEAR Documentation](https://docs.near.org)
-- [NEAR StackOverflow](https://stackoverflow.com/questions/tagged/nearprotocol)
-- [NEAR Discord](https://near.chat)
-- [NEAR Telegram Developers Community Group](https://t.me/neardev)
-- NEAR DevHub: [Telegram](https://t.me/neardevhub), [Twitter](https://twitter.com/neardevhub)
+# Initialize the contract
+TWO_MINUTES_FROM_NOW=$(date -v+2M +%s000000000)
+near call <contractId> init '{"end_time": "'$TWO_MINUTES_FROM_NOW'", "auctioneer": "<auctioneerAccountId>", "ft_contract": "<ftContractId>", "nft_contract": "<nftContractId>", "token_id": "<tokenId>", "starting_price": "<startingPrice>"}' --accountId <contractId>
+```
