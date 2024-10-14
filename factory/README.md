@@ -37,5 +37,5 @@ near deploy <contractId> ./build/auction.wasm
 
 # Create a new auction
 TWO_MINUTES_FROM_NOW=$(date -v+2M +%s000000000)
-near call <contractId> deploy_new_auction '{"name": "<auctionName>", "end_time": '$TWO_MINUTES_FROM_NOW', "auctioneer": "<auctioneerAccountId>>", "ft_contract": "<nftContractId>", "nft_contract": "<nftContractId>", "token_id": "tokenId", "starting_price": "<startingPrice>"}' --accountId <contractId> --deposit '1.6 NEAR' 
+near call <contractId> deploy_new_auction '{"name": "<auctionName>", "end_time": '$TWO_MINUTES_FROM_NOW', "auctioneer": "<auctioneerAccountId>>", "ft_contract": "<nftContractId>", "nft_contract": "<nftContractId>", "token_id": "tokenId", "starting_price": "<startingPrice>"}' --accountId <accountId> --deposit 1.6 --gas  100000000000000
 ```
