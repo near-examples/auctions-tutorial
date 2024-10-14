@@ -37,7 +37,7 @@ Install the [NEAR CLI](https://docs.near.org/tools/near-cli#installation) and ru
 near create <contractId> --useFaucet
 
 # Deploy the contract
-near deploy <contractId> ./build/auction.wasm
+near deploy <contractId> ./build/auction-contract.wasm
 
 # Initialize the contract
 TWO_MINUTES_FROM_NOW=$(date -v+2M +%s000000000)
