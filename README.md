@@ -19,14 +19,14 @@ Lastly, this repo contains a factory contract written in rust that is used to de
 
 ## What These Examples Show
 
-- [Creating a simple smart contract](./1.1-basic.md#the-contracts-state)
-- [Writing tests for a contract](./1.2-testing.md)
-- [Deploying a contract to testnet](./1.3-deploy.md)
-- [Locking a contract](./1.3-deploy.md#locking-the-contract)
-- [Creating a frontend to interact with the contract](./2.1-frontend.md)
-- [Using an indexing API to view historical bids](./2.2-indexing.md)
-- [Making cross-contract calls](./3.1-nft.md#transferring-the-nft-to-the-winner)
-- [Using Non-Fungible Tokens](./3.1-nft.md)
-- [Using Fungible Tokens](./3.2-ft.md) 
-- [Modifying a factory contract to deploy your own contracts](./4-factory.md)
+- [Creating a simple smart contract](https://docs.near.org/tutorials/auction/basic-auction#the-contracts-state)
+- [Writing tests for a contract](https://docs.near.org/tutorials/auction/sandbox-testing)
+- [Deploying a contract to testnet](https://docs.near.org/tutorials/auction/deploy)
+- [Locking a contract](https://docs.near.org/tutorials/auction/deploy#locking-the-contract)
+- [Creating a frontend to interact with the contract](https://docs.near.org/tutorials/auction/creating-a-frontend)
+- [Using an indexing API to view historical bids](https://docs.near.org/tutorials/auction/indexing-historical-data)
+- [Making cross-contract calls](https://docs.near.org/tutorials/auction/winning-an-nft#transferring-the-nft-to-the-winner)
+- [Using Non-Fungible Tokens](https://docs.near.org/tutorials/auction/winning-an-nft)
+- [Using Fungible Tokens](https://docs.near.org/tutorials/auction/bidding-with-fts) 
+- [Modifying a factory contract to deploy your own contracts](https://docs.near.org/tutorials/auction/auction-factory)
 
