@@ -56,7 +56,7 @@ export default function Home() {
 
   useEffect(() => {
     const getNftInfo = async () => {
-      const data = await await wallet.viewMethod({
+      const data = await wallet.viewMethod({
         contractId: auctionInfo.nft_contract,
         method: "nft_token",
         args: { token_id: auctionInfo.token_id }
@@ -74,7 +74,7 @@ export default function Home() {
 
   useEffect(() => {
     const getFtInfo = async () => {
-      const ftInfo = await await wallet.viewMethod({
+      const ftInfo = await wallet.viewMethod({
         contractId: auctionInfo.ft_contract,
         method: "ft_metadata",
       });
