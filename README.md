@@ -5,9 +5,10 @@
 
 This repository contains examples that are used as part of the [Auction Tutorial](https://docs.near.org/vi/tutorials/auction/basic-auction) in the documentation.
 
-The repo contains three versions of an auction contract written in both Rust and JavaScript. The first contract is a simple auction where you can place bids and claim the auction, the second introduces NFTs as a prize and the final contract uses fungible tokens to place bids.
+The repo contains three versions of an auction contract written in both Rust, JavaScript and Python. The first contract is a simple auction where you can place bids and claim the auction, the second introduces NFTs as a prize and the final contract uses fungible tokens to place bids.
 - [JavaScript Contracts](./contract-ts)
 - [Rust Contracts](./contract-rs)
+- [Python Contracts](./contract-py)
 
 This repo also has two different frontends, one for the simple auction and one for the final contract that uses FTs and NFTs.
 - [Frontends](./frontends/)
