@@ -8,6 +8,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install cargo-near
+        run: cargo install cargo-near
       - name: Install and test modules
         run: |
           cd ./contract-rs/02-winner-gets-nft
