@@ -5,6 +5,7 @@ use crate::TokenId;
 
 // NFT interface for cross-contract calls
 #[ext_contract(nft_contract)]
+#[allow(dead_code)]
 trait NFT {
     fn nft_transfer(&self, receiver_id: AccountId, token_id: TokenId);
 }

@@ -76,7 +76,7 @@ impl Contract {
         Promise::new(last_bidder).transfer(last_bid)
     }
 
-    pub fn claim(&mut self) {
+    pub fn claim(&mut self) -> Promise {
         assert!(
             env::block_timestamp() > self.auction_end_time.into(),
             "Auction has not ended yet"
@@ -87,13 +87,16 @@ impl Contract {
         self.claimed = true;
 
         // Transfer tokens to the auctioneer
-        Promise::new(self.auctioneer.clone()).transfer(self.highest_bid.bid);
+        let transfer_to_auctioneer = Promise::new(self.auctioneer.clone()).transfer(self.highest_bid.bid);
 
         // Transfer the NFT to the highest bidder
-        nft_contract::ext(self.nft_contract.clone())
+        let transfer_nft = nft_contract::ext(self.nft_contract.clone())
             .with_static_gas(Gas::from_tgas(30))
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .nft_transfer(self.highest_bid.bidder.clone(), self.token_id.clone());
+
+        // Chain the promises
+        transfer_to_auctioneer.then(transfer_nft)
     }
 
     pub fn get_highest_bid(&self) -> Bid {
