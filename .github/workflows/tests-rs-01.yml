@@ -11,14 +11,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install cargo-near
+        run: cargo install cargo-near
+
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: 1.86
           cache: false
-
-      - name: Install cargo-near
-        run: cargo install cargo-near
 
       - name: Run tests
         working-directory: ./contract-rs/01-basic-auction
