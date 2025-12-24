@@ -53,6 +53,7 @@ impl Contract {
     }
 
     // Users bid by transferring FT tokens
+    #[allow(unused_variables, unused_must_use)]
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
         require!(
             env::block_timestamp() < self.auction_end_time.into(),
@@ -86,6 +87,7 @@ impl Contract {
         U128(0)
     }
 
+    #[allow(unused_must_use)]
     pub fn claim(&mut self) {
         require!(
             env::block_timestamp() > self.auction_end_time.into(),

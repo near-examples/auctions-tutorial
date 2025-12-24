@@ -101,7 +101,7 @@ impl Contract {
             attached,
             user
         );
-        Promise::new(user).transfer(attached);
+        let _ = Promise::new(user).transfer(attached);
         false
     }
 }

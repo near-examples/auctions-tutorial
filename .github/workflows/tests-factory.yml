@@ -8,6 +8,13 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+
+      - name: Install cargo-near
+        run: cargo install cargo-near
       - name: Install and test modules
         run: |
           cd ./factory
