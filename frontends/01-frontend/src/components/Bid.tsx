@@ -1,34 +1,45 @@
-import { useContext, useEffect, useState } from 'react';
-import { NearContext } from '@/context';
+import { useEffect, useState } from 'react';
 import styles from './Bid.module.css';
 import { toast } from 'react-toastify';
+import { useNear } from '@/hooks/useNear';
 
-const Bid = ({pastBids, lastBid, action}) => {
-  const [amount, setAmount] = useState(lastBid + 1);
-  const { signedAccountId } = useContext(NearContext);
-  const nearMultiplier = Math.pow(10, 24)
+interface BidProps {
+  pastBids: [string, number][] | string | null;
+  lastBid: number;
+  action: (amount: number) => Promise<void>;
+}
+
+const Bid = ({ pastBids, lastBid, action }: BidProps) => {
+  const [amount, setAmount] = useState<number>(lastBid + 1);
+  const { signedAccountId } = useNear();
+  const nearMultiplier = Math.pow(10, 24);
 
   const handleBid = async () => {
     if (signedAccountId) {
-      await action(amount);
-    toast("you have made a successful bid");
+      try {
+        await action(amount);
+  console.log('Bid placed successfully');
+        toast.success('You have made a successful bid');
+      } catch (err) {
+        toast.error('Failed to place bid');
+      }
     } else {
-      toast("Please sign in to make a bid");
+      toast.info('Please sign in to make a bid');
     }
-  }
+  };
 
   useEffect(() => {
     setAmount(lastBid + 1);
-  }
-  , [lastBid]);
+  }, [lastBid]);
 
   return (
     <div className={styles.historyContainer}>
       <h3>History</h3>
+
       {typeof pastBids === 'string' ? (
         <p className="error">{pastBids}</p>
       ) : pastBids === null ? (
-        <p>Loading...</p> 
+        <p>Loading...</p>
       ) : pastBids.length === 0 ? (
         <p>No bids have been placed yet</p>
       ) : (
@@ -41,20 +52,21 @@ const Bid = ({pastBids, lastBid, action}) => {
           ))}
         </ul>
       )}
+
       <div className={styles.container}>
         <input
           type="number"
           value={amount}
           min={lastBid}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e) => setAmount(Number(e.target.value))}
           className={styles.inputField}
-        /> 
+        />
         <button className={styles.bidButton} onClick={handleBid}>
           Bid
         </button>
       </div>
     </div>
   );
-}
+};
 
 export default Bid;
