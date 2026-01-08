@@ -1,4 +1,4 @@
-name: Tests Contract PY
+name: 03 - Tests Contract PY
 on: push
 jobs:
   workflows:
