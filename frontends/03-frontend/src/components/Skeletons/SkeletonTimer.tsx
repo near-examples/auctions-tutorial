@@ -2,7 +2,7 @@ import styles from './Skeleton.module.css';
 
 const SkeletonTimer = () => {
   return (
-    <div className={styles.timer}>
+    <div className={`${styles.timer} ${styles.container}`}>
       <div>
         <span>99</span> Days
       </div>
@@ -16,9 +16,7 @@ const SkeletonTimer = () => {
         <span>99</span> Seconds
       </div>
     </div>
-
-
   );
-}
+};
 
 export default SkeletonTimer;
