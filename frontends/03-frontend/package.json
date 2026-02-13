@@ -12,20 +12,26 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@near-wallet-selector/core": "^8.9.11",
-    "@near-wallet-selector/here-wallet": "^8.9.11",
-    "@near-wallet-selector/modal-ui": "^8.9.11",
-    "@near-wallet-selector/my-near-wallet": "^8.9.11",
+    "@hot-labs/near-connect": "^0.6.2",
+    "@near-js/crypto": "^2.3.1",
+    "@near-js/providers": "^2.3.1",
+    "@near-js/transactions": "^2.3.1",
+    "@near-js/utils": "^2.3.1",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@walletconnect/sign-client": "^2.21.9",
     "bootstrap": "^5",
     "bootstrap-icons": "^1.11.3",
     "near-api-js": "^4.0.3",
-    "next": "14.2.3",
+    "next": "^15",
     "react": "^18",
     "react-dom": "^18",
     "react-toastify": "^10.0.5"
   },
   "devDependencies": {
+    "@types/node": "^24.7.2",
     "eslint": "^8",
-    "eslint-config-next": "14.2.3"
+    "eslint-config-next": "14.2.3",
+    "typescript": "^5.9.3"
   }
 }
