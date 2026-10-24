@@ -1,25 +1,31 @@
+import { formatUnits, nextBid } from '@/utils/amounts.mjs';
 import { useContext, useEffect, useState } from 'react';
 import { NearContext } from '@/context';
 import styles from './Bid.module.css';
 import { toast } from 'react-toastify';
 
 const Bid = ({ pastBids, ftName, ftImg, lastBidDisplay, ftDecimals, action}) => {
-  const [amount, setAmount] = useState(lastBidDisplay + 1);
+  const [amount, setAmount] = useState(nextBid(lastBidDisplay, ftDecimals));
   const { signedAccountId } = useContext(NearContext);
 
+  const [pending, setPending] = useState(false);
   const handleBid = async () => {
-    if (signedAccountId) {
+    if (!signedAccountId) return toast.error('Please sign in to make a bid');
+    setPending(true);
+    try {
       await action(amount);
-    toast("you have made a successful bid");
-    } else {
-      toast("Please sign in to make a bid");
+      toast.success('Your bid was submitted');
+    } catch (error) {
+      toast.error(error.message || 'Bid failed');
+    } finally {
+      setPending(false);
     }
-  }
+  };
 
   useEffect(() => {
-    setAmount(lastBidDisplay + 1);
+    setAmount(nextBid(lastBidDisplay, ftDecimals));
   }
-  , [lastBidDisplay]);
+  , [lastBidDisplay, ftDecimals]);
 
   return (
     <div className={styles.historyContainer}>
@@ -34,7 +40,7 @@ const Bid = ({ pastBids, ftName, ftImg, lastBidDisplay, ftDecimals, action}) => 
         <ul>
           {pastBids?.map((bid, index) => (
             <li key={index} className={styles.bidItem}>
-              <span>{bid[1] / Math.pow(10, ftDecimals)} {ftName}</span>
+              <span>{formatUnits(bid[1], ftDecimals)} {ftName}</span>
               <span>{bid[0]}</span>
             </li>
           ))}
@@ -43,12 +49,13 @@ const Bid = ({ pastBids, ftName, ftImg, lastBidDisplay, ftDecimals, action}) => 
       <div className={styles.container}>
         <input
           type="number"
+          step="any"
           value={amount}
           min={lastBidDisplay}
           onChange={(e) => setAmount(e.target.value)}
           className={styles.inputField}
         />
-        <button className={styles.bidButton} onClick={handleBid}>
+        <button className={styles.bidButton} onClick={handleBid} disabled={pending}>
           <img className={styles.iconFT} src={ftImg} alt={ftName} width="25" /> Bid
         </button>
       </div>

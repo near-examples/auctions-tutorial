@@ -5,13 +5,14 @@ export default async function handler(req, res) {
       }
       // Get all bid transactions
       const { contractId } = req.query;
-      const bidsRes = await fetch(`https://api-testnet.nearblocks.io/v1/account/${contractId}/txns?method=bid&page=1&per_page=25&order=desc`, {
+      const bidsRes = await fetch(`https://${process.env.NEXT_PUBLIC_NETWORK_ID === 'mainnet' ? 'api' : 'api-testnet'}.nearblocks.io/v1/account/${contractId}/txns?method=bid&page=1&per_page=25&order=desc`, {
         headers: {
           'Accept': '*/*',
           'Authorization': `Bearer ${process.env.API_KEY}`
         }
       });
       
+      if (!bidsRes.ok) throw new Error('Indexer request failed');
       const bidsJson = await bidsRes.json();
   
       const txns = bidsJson.txns;

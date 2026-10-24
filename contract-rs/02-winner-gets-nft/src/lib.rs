@@ -28,7 +28,6 @@ pub struct Contract {
 #[near]
 impl Contract {
     #[init]
-    #[private] // only callable by the contract's account
     pub fn init(
         end_time: U64,
         auctioneer: AccountId,
@@ -87,7 +86,8 @@ impl Contract {
         self.claimed = true;
 
         // Transfer tokens to the auctioneer
-        let transfer_to_auctioneer = Promise::new(self.auctioneer.clone()).transfer(self.highest_bid.bid);
+        let transfer_to_auctioneer =
+            Promise::new(self.auctioneer.clone()).transfer(self.highest_bid.bid);
 
         // Transfer the NFT to the highest bidder
         let transfer_nft = nft_contract::ext(self.nft_contract.clone())

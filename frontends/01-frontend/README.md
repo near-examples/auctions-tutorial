@@ -1,19 +1,26 @@
 # Basic Auction Frontend
 
-This directory contains a simple NextJS frontend for the basic auction contract (the first contract). It lets users bid on auctions, see the current highest bid, view historical bids, see the auction end time, and once finished the auction can be claimed. This follows the [Creating a Frontend](https://docs.near.org/tutorials/auction/creating-a-frontend) section of the auction tutorial.
+A Next.js frontend for [`01-basic-auction`](../../contract-rs/01-basic-auction).
+Connect a wallet with `@hot-labs/near-connect`, read contracts with `near-api-js` 7, bid, and claim after expiry. Amounts are converted with exact integer arithmetic.
 
-To get historical bids an indexing API is used. The API requires a key (which is free) to use, read [this section](https://docs.near.org/tutorials/auction/indexing-historical-data#near-blocks-api-key) to see how to get and use your own key.
+## Run locally
 
-## Running the frontend
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start the frontend:
+Use Node.js 22.12+ (CI uses Node.js 24):
 
 ```bash
+cp .env.example .env.local
+npm ci
 npm run dev
 ```
+
+Set `NEXT_PUBLIC_AUCTION_CONTRACT` to your deployed, initialized auction. Set `NEXT_PUBLIC_NETWORK_ID` to `testnet` or `mainnet`; optionally override `NEXT_PUBLIC_RPC_URL`. Public variables are included at build time, so rebuild after changing them.
+
+To show historical bids, set the server-only `API_KEY` to your [NearBlocks API key](https://docs.near.org/tutorials/auction/indexing-historical-data#near-blocks-api-key). Without it the history panel displays an unavailable message; wallet connections, reads, bids, and claims still work. Never prefix this key with `NEXT_PUBLIC_`.
+
+```bash
+npm test
+npm run build
+npm start
+```
+
+The tests cover precise NEAR/FT conversions, fractional amounts, invalid input, u128 overflow, session restoration, wallet events and cleanup, reads before sign-in, and exact transaction amounts. Wallet approval requires a browser and a funded account on the configured network.

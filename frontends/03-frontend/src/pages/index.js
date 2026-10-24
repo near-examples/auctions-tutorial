@@ -1,3 +1,4 @@
+import { parseUnits, formatUnits } from '@/utils/amounts.mjs';
 import styles from '@/styles/app.module.css';
 import AuctionItem from '@/components/AuctionItem';
 import Timer from '@/components/Timer';
@@ -11,6 +12,7 @@ import { AUCTION_CONTRACT } from '@/config';
 import LastBid from '@/components/LastBid';
 
 export default function Home() {
+  const [error, setError] = useState('');
   const [auctionInfo, setAuctionInfo] = useState(null)
   const [nftInfo, setNftInfo] = useState(null)
   const [secondsRemaining, setSecondsRemaining] = useState(20)
@@ -18,7 +20,7 @@ export default function Home() {
   const [ftName, setFtName] = useState("")
   const [ftImg, setFtImg] = useState("")
   const [ftDecimals, setFtDecimals] = useState(0)
-  const [lastBidDisplay, setLastBidDisplay] = useState(0)
+  const [lastBidDisplay, setLastBidDisplay] = useState('0')
   const [validAuction, setValidAuction] = useState("Invalid Auction")
   const [pastBids, setPastBids] = useState(null)
 
@@ -32,14 +34,14 @@ export default function Home() {
       });
       setAuctionInfo(data)
     }
-    getInfo();
+    getInfo().catch((err) => setError(err.message));
 
     if (ftContract) {
       fetchPastBids();
     }
 
     const intervalId = setInterval(() => {
-      getInfo();
+      getInfo().catch((err) => setError(err.message));
       setSecondsRemaining(20);
     }, 20000);
     
@@ -62,12 +64,10 @@ export default function Home() {
         args: { token_id: auctionInfo.token_id }
       });
       setNftInfo(data)
-      if (data.owner_id == AUCTION_CONTRACT) {
-        setValidAuction("Valid Auction")
-      }
+      setValidAuction(data?.owner_id === AUCTION_CONTRACT ? "Valid Auction" : "NFT is not held by the auction")
     }
     if (auctionInfo) {
-      getNftInfo();
+      getNftInfo().catch((err) => setError(err.message));
     }
 
   }, [auctionInfo]);
@@ -82,25 +82,29 @@ export default function Home() {
       setFtName(ftInfo.symbol)
       setFtImg(ftInfo.icon)
       setFtDecimals(ftInfo.decimals)
-      let bidAmount = auctionInfo.highest_bid.bid / Math.pow(10, ftInfo.decimals)
+      let bidAmount = formatUnits(auctionInfo.highest_bid.bid, ftInfo.decimals)
       setLastBidDisplay(bidAmount)
 
-      fetchPastBids();
+      fetchPastBids(auctionInfo.ft_contract);
     }
     if (auctionInfo) {
-      getFtInfo();
+      getFtInfo().catch((err) => setError(err.message));
     }
   }, [auctionInfo]);
 
   const bid = async (amount) => {
-    let real_amount = amount * Math.pow(10, ftDecimals)
+    const real_amount = parseUnits(amount, ftDecimals)
     let response = await wallet.callMethod({
       contractId: auctionInfo.ft_contract,
       method: "ft_transfer_call",
-      deposit: 1,
+      deposit: '1',
       args: { "receiver_id": AUCTION_CONTRACT, "amount": String(real_amount), "msg": "" },
       gas:"300000000000000"
     })
+    if (BigInt(response ?? '0') === 0n) {
+      throw new Error('The auction rejected this bid and refunded the tokens');
+    }
+    window.location.reload();
     return response
   }
 
@@ -110,18 +114,21 @@ export default function Home() {
       method: "claim",
       gas:"300000000000000"
     })
+    window.location.reload();
     return response
   }
 
-  const fetchPastBids = async () => {
-      const response = await fetch(`/api/getBidHistory?contractId=${AUCTION_CONTRACT}&ftId=${ftContract}`);
+  const fetchPastBids = async (tokenContract = ftContract) => {
+    try {
+      const response = await fetch(`/api/getBidHistory?contractId=${AUCTION_CONTRACT}&ftId=${tokenContract}`);
       const data = await response.json();
-      if (data.error) {
-        setPastBids(data.error);
-      } else {
-        setPastBids(data.pastBids);
-      }
-  }
+      setPastBids(data.error || data.pastBids);
+    } catch {
+      setPastBids('Bid history is unavailable');
+    }
+  };
+
+  if (error) return <main role="alert">Unable to load auction: {error}</main>;
 
   return (
     <main className={styles.main}>

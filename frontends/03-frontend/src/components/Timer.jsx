@@ -3,26 +3,25 @@ import styles from './Timer.module.css';
 import { toast } from 'react-toastify';
 
 const Timer = ({ endTime, claimed, action }) => {
-  const claim = async() =>{ 
-    await action();
-    toast("Congratulations!!")
+  const [pending, setPending] = useState(false);
+  const claim = async () => {
+    setPending(true);
+    try {
+      await action();
+      toast.success('Auction claimed');
+    } catch (error) {
+      toast.error(error.message || 'Claim failed');
+    } finally {
+      setPending(false);
+    }
   };
-
-  const [time, setTime] = useState((Number(endTime) / 10 ** 6) - Date.now());
+  const [time, setTime] = useState(0);
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTime((prevTime) => {
-        const newTime = prevTime - 1000;
-        if (newTime <= 0) {
-          clearInterval(timer);
-          return 0;
-        }
-        return newTime;
-      });
-    }, 1000);
-
+    const update = () => setTime(Math.max(0, Number(BigInt(endTime) / 1_000_000n) - Date.now()));
+    update();
+    const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [endTime]);
 
   const formatTime = (time) => {
     const allSeconds = Math.floor(time / 1000);
@@ -64,7 +63,7 @@ const Timer = ({ endTime, claimed, action }) => {
       )}
       {showActionButton  && 
        <div className={styles.timer}>
-          <button className={styles.button} onClick={claim}>
+          <button className={styles.button} onClick={claim} disabled={pending}>
           Claim
         </button>
        </div>

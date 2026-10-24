@@ -21,7 +21,6 @@ pub struct Contract {
 #[near]
 impl Contract {
     #[init]
-    #[private] // only callable by the contract's account
     pub fn init(end_time: U64, auctioneer: AccountId) -> Self {
         Self {
             highest_bid: Bid {

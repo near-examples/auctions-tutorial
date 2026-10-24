@@ -1,24 +1,30 @@
+import { formatUnits, nextBid } from '@/utils/amounts.mjs';
 import { useContext, useEffect, useState } from 'react';
 import { NearContext } from '@/context';
 import styles from './Bid.module.css';
 import { toast } from 'react-toastify';
 
 const Bid = ({pastBids, lastBid, action}) => {
-  const [amount, setAmount] = useState(lastBid + 1);
+  const [amount, setAmount] = useState(nextBid(lastBid, 24));
   const { signedAccountId } = useContext(NearContext);
-  const nearMultiplier = Math.pow(10, 24)
 
+
+  const [pending, setPending] = useState(false);
   const handleBid = async () => {
-    if (signedAccountId) {
+    if (!signedAccountId) return toast.error('Please sign in to make a bid');
+    setPending(true);
+    try {
       await action(amount);
-    toast("you have made a successful bid");
-    } else {
-      toast("Please sign in to make a bid");
+      toast.success('Your bid was submitted');
+    } catch (error) {
+      toast.error(error.message || 'Bid failed');
+    } finally {
+      setPending(false);
     }
-  }
+  };
 
   useEffect(() => {
-    setAmount(lastBid + 1);
+    setAmount(nextBid(lastBid, 24));
   }
   , [lastBid]);
 
@@ -35,7 +41,7 @@ const Bid = ({pastBids, lastBid, action}) => {
         <ul>
           {pastBids?.map((bid, index) => (
             <li key={index} className={styles.bidItem}>
-              <span>{bid[1] / nearMultiplier} $NEAR</span>
+              <span>{formatUnits(bid[1], 24)} $NEAR</span>
               <span>{bid[0]}</span>
             </li>
           ))}
@@ -44,12 +50,13 @@ const Bid = ({pastBids, lastBid, action}) => {
       <div className={styles.container}>
         <input
           type="number"
+          step="any"
           value={amount}
           min={lastBid}
           onChange={(e) => setAmount(e.target.value)}
           className={styles.inputField}
         /> 
-        <button className={styles.bidButton} onClick={handleBid}>
+        <button className={styles.bidButton} onClick={handleBid} disabled={pending}>
           Bid
         </button>
       </div>

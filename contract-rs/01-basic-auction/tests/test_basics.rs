@@ -35,10 +35,13 @@ async fn test_contract_is_operational() -> testresult::TestResult<()> {
     )?;
 
     // Calculate the end time for the auction as a parameter for the init function
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::SystemTime::UNIX_EPOCH)?
-        .as_secs();
-    let a_minute_from_now = (now + 60) * 1000000000;
+    let now = near_api::Chain::block()
+        .fetch_from(&sandbox_network)
+        .await?
+        .header
+        .timestamp_nanosec
+        .parse::<u64>()?;
+    let a_minute_from_now = now + 60_000_000_000;
 
     // Deploy the contract with the init call
     near_api::Contract::deploy(contract.account_id().clone())

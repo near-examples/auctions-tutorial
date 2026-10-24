@@ -1,0 +1,32 @@
+name: Rust contracts and sandbox tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+        contract: [contract-rs/01-basic-auction, contract-rs/02-winner-gets-nft, contract-rs/03-bid-with-fts, factory]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.97.1
+          components: rustfmt
+          targets: wasm32-unknown-unknown
+      - name: Install system dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ matrix.contract }}
+      - name: Install cargo-near
+        run: cargo install cargo-near --version 0.21.1 --locked
+      - name: Check formatting
+        working-directory: ${{ matrix.contract }}
+        run: cargo fmt --check
+      - name: Run unit and sandbox tests
+        working-directory: ${{ matrix.contract }}
+        run: cargo test --locked

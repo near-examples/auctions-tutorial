@@ -4,32 +4,29 @@ This directory contains a Rust contract that is used as part of the [Winning an 
 
 In this part the contract is adapted so the auction is initialized with an NFT and the winner of the auction is sent the NFT. It is a great way to learn how to work with NFTs in NEAR.
 
-## How to Build Locally?
+## Build and test
 
-Install [`cargo-near`](https://github.com/near/cargo-near) and run:
-
-```bash
-cargo near build
-```
-
-## How to Test Locally?
+The pinned Rust toolchain is installed by rustup. Install [cargo-near](https://github.com/near/cargo-near):
 
 ```bash
-cargo test
+cargo install cargo-near --version 0.21.1 --locked
+cargo near build non-reproducible-wasm
+cargo test --locked
 ```
 
-## How to Deploy?
+The integration test builds the contract, starts `near-sandbox`, creates local accounts, and uses `near-api` to submit transactions and read state. It tests bids, refunds, early claims, settlement, repeated claims, and bids after expiry. Time advances with the sandbox; no testnet credentials are used.
 
-To deploy manually, install [NEAR CLI](https://docs.near.org/tools/near-cli#installation) and run:
+## Deploy
+
+Use the current [NEAR CLI](https://near.cli.rs) to create an account with `near account create-account`.
+Deploy and initialize in the same transaction to prevent anyone else from initializing the auction.
+From this directory, run the interactive deployment command:
 
 ```bash
-# Create a new account
-near create <contractId> --useFaucet
-
-# Deploy the contract on it
-near deploy <contractId> ./target/near/auction-contract.wasm
-
-# Initialize the contract
-TWO_MINUTES_FROM_NOW=$(date -v+2M +%s000000000)
-near call <contractId> init '{"end_time": "'$TWO_MINUTES_FROM_NOW'", "auctioneer": "<auctioneerAccountId>", "nft_contract": "<nftContractId>", "token_id": "<tokenId>"}' --accountId <contractId>
+near contract deploy <contract.testnet> use-file target/near/auction_contract.wasm with-init-call init json-args '{"end_time":"<nanosecond timestamp>","auctioneer":"<auctioneer.testnet>","nft_contract":"<nft.testnet>","token_id":"1"}'
 ```
+
+Replace placeholders, including `end_time`, with real values. Compute a deadline two minutes from now with `node -e 'console.log((BigInt(Date.now() + 120000) * 1000000n).toString())'`.
+Choose zero attached deposit for initialization, the testnet network, and the contract account as signer when prompted. U64 timestamps and U128 token amounts are JSON strings.
+
+Transfer the NFT into the auction account before accepting bids. The winning bidder receives it when the auction is claimed.

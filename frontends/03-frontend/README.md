@@ -1,19 +1,28 @@
-# Advanced Auction Frontend
+# FT/NFT Auction Frontend
 
-This directory contains a NextJS frontend for final contract from the auctional tutorial. This frontend now has bids being placed in FTs and displays the NFT that is being auctioned. You can follow the updates in the [Updating the Frontend](https://docs.near.org/tutorials/auction/updating-the-frontend) section of the auction tutorial.
+A Next.js frontend for [`03-bid-with-fts`](../../contract-rs/03-bid-with-fts).
+Connect a wallet with `@hot-labs/near-connect`, read contracts with `near-api-js` 7, bid, and claim after expiry. Amounts are converted with exact integer arithmetic.
 
-To get historical bids an indexing API is used. The API requires a key (which is free) to use, read [this section](https://docs.near.org/tutorials/auction/indexing-historical-data#near-blocks-api-key) to see how to get and use your own key.
+## Run locally
 
-## Running the frontend
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start the frontend:
+Use Node.js 22.12+ (CI uses Node.js 24):
 
 ```bash
+cp .env.example .env.local
+npm ci
 npm run dev
 ```
+
+Set `NEXT_PUBLIC_AUCTION_CONTRACT` to your deployed, initialized auction. Set `NEXT_PUBLIC_NETWORK_ID` to `testnet` or `mainnet`; optionally override `NEXT_PUBLIC_RPC_URL`. Public variables are included at build time, so rebuild after changing them.
+
+To show historical bids, set the server-only `API_KEY` to your [NearBlocks API key](https://docs.near.org/tutorials/auction/indexing-historical-data#near-blocks-api-key). Without it the history panel displays an unavailable message; wallet connections, reads, bids, and claims still work. Never prefix this key with `NEXT_PUBLIC_`.
+
+```bash
+npm test
+npm run build
+npm start
+```
+
+The tests cover precise NEAR/FT conversions, fractional amounts, invalid input, u128 overflow, session restoration, wallet events and cleanup, reads before sign-in, and exact transaction amounts. Wallet approval requires a browser and a funded account on the configured network.
+
+Before bidding, the auction must hold the NFT and the auction, bidders, and auctioneer must be registered on its FT contract. Bids call `ft_transfer_call` with the FT's decimals and exactly 1 yoctoNEAR attached.

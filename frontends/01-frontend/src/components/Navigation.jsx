@@ -25,7 +25,7 @@ export const Navigation = () => {
   return (
     <nav className="navbar navbar-expand-lg">
       <div className="container-fluid">
-        <Link href="/" passHref legacyBehavior>
+        <Link href="/">
           <Image priority src={NearLogo} alt="NEAR" width="30" height="24" className="d-inline-block align-text-top" />
         </Link>
         <div className='navbar-nav pt-1'>

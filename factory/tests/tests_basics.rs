@@ -1,4 +1,5 @@
 use near_api::{AccountId, NearGas, NearToken};
+use near_sdk::base64::{engine::general_purpose::STANDARD, Engine};
 use near_sdk::json_types::U128;
 use near_sdk::serde_json::json;
 
@@ -16,7 +17,20 @@ pub struct Bid {
 async fn test_contract_is_operational() -> testresult::TestResult<()> {
     // Build the contract wasm file
     let contract_wasm_path = cargo_near_build::build_with_cli(Default::default())?;
-    let contract_wasm = std::fs::read(contract_wasm_path)?;
+    let contract_wasm = std::fs::read(&contract_wasm_path)?;
+
+    // Build the current FT auction source, never a checked-in auction binary.
+    let auction_path = cargo_near_build::build_with_cli(cargo_near_build::BuildOpts {
+        manifest_path: Some(
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../contract-rs/03-bid-with-fts/Cargo.toml"
+            )
+            .into(),
+        ),
+        ..Default::default()
+    })?;
+    let auction_wasm = std::fs::read(auction_path)?;
 
     // Read the FT wasm file
     let ft_wasm = std::fs::read(FT_WASM_FILEPATH)?;
@@ -60,43 +74,84 @@ async fn test_contract_is_operational() -> testresult::TestResult<()> {
 
     // Skip creating NFT contract as we are are only going to test making a bid to the auction
 
+    let global = create_subaccount(&sandbox, "global.sandbox").await?;
+    near_api::Contract::deploy_global_contract_code(auction_wasm)
+        .as_account_id(global.account_id().clone())
+        .with_signer(signer.clone())
+        .send_to(&sandbox_network)
+        .await?
+        .assert_success();
+
     // Deploy factory contract
     near_api::Contract::deploy(contract.account_id().clone())
         .use_code(contract_wasm)
-        .without_init_call()
+        .with_init_call("new", json!({"global_contract_id": global.account_id()}))?
         .with_signer(signer.clone())
         .send_to(&sandbox_network)
         .await?
         .assert_success();
 
     // Create auction by calling factory contract
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::SystemTime::UNIX_EPOCH)?
-        .as_secs();
-    let a_minute_from_now = (now + 60) * 1000000000;
+    let now = near_api::Chain::block()
+        .fetch_from(&sandbox_network)
+        .await?
+        .header
+        .timestamp_nanosec
+        .parse::<u64>()?;
+    let a_minute_from_now = now + 60_000_000_000;
     let starting_price = U128(10_000);
 
-    contract
-        .call_function("deploy_new_auction", json!({"name": "new-auction", "end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.account_id(),"ft_contract": ft_contract.account_id(),"nft_contract": nft_contract.account_id(),"token_id":"1", "starting_price":starting_price }),)
+    let init_args = json!({"end_time": a_minute_from_now.to_string(), "auctioneer": auctioneer.account_id(), "ft_contract": ft_contract.account_id(), "nft_contract": nft_contract.account_id(), "token_id": "1", "starting_price": starting_price});
+    let required: NearToken = contract
+        .call_function("get_required", json!({"args": init_args}))
+        .read_only()
+        .fetch_from(&sandbox_network)
+        .await?
+        .data;
+    assert!(required < NearToken::from_millinear(200));
+    let mut args = init_args.clone();
+    args["name"] = json!("new-auction");
+    let created: bool = contract
+        .call_function("deploy_new_auction", args)
         .transaction()
-        .deposit(NearToken::from_millinear(1600))
+        .deposit(required)
+        .gas(NearGas::from_tgas(300))
         .with_signer(alice.account_id().clone(), signer.clone())
         .send_to(&sandbox_network)
         .await?
-        .assert_success();
+        .assert_success()
+        .json()?;
+    assert!(created);
+
+    let mut large_args = init_args.clone();
+    large_args["token_id"] = json!("x".repeat(10_000));
+    let large_required: NearToken = contract
+        .call_function("get_required", json!({"args": large_args}))
+        .read_only()
+        .fetch_from(&sandbox_network)
+        .await?
+        .data;
+    assert!(large_required > required);
 
     let auction_account_id: AccountId = format!("new-auction.{}", contract.account_id())
         .parse()
         .unwrap();
-    sandbox
-        .import_account(
-            sandbox.rpc_addr.to_string(),
-            format!("new-auction.{}", contract.account_id())
-                .parse()
-                .unwrap(),
-        )
-        .send()
-        .await?;
+    let created = near_api::Account(auction_account_id.clone());
+    assert_eq!(
+        created
+            .view()
+            .fetch_from(&sandbox_network)
+            .await?
+            .data
+            .contract_state,
+        near_api::types::account::ContractState::GlobalAccountId(global.account_id().clone())
+    );
+    assert!(created
+        .list_keys()
+        .fetch_from(&sandbox_network)
+        .await?
+        .data
+        .is_empty());
     let auction_account = near_api::Account(auction_account_id.clone()).as_contract();
 
     // Register accounts
@@ -159,13 +214,119 @@ async fn test_contract_is_operational() -> testresult::TestResult<()> {
 
     // Try to launch a new auction with insufficient deposit
     contract
-        .call_function("deploy_new_auction", json!({"name": "new-auction", "end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.account_id(),"ft_contract": ft_contract.account_id(),"nft_contract": nft_contract.account_id(),"token_id":"1", "starting_price":starting_price }),)
+        .call_function("deploy_new_auction", json!({"name": "too-cheap", "end_time": a_minute_from_now.to_string(),"auctioneer": auctioneer.account_id(),"ft_contract": ft_contract.account_id(),"nft_contract": nft_contract.account_id(),"token_id":"1", "starting_price":starting_price }),)
         .transaction()
-        .deposit(NearToken::from_millinear(1400))
+        .deposit(NearToken::from_yoctonear(1))
         .with_signer(alice.account_id().clone(), signer.clone())
         .send_to(&sandbox_network)
         .await?
         .assert_failure();
+
+    // Duplicate account creation fails asynchronously and refunds the caller.
+    let before = alice
+        .tokens()
+        .near_balance()
+        .fetch_from(&sandbox_network)
+        .await?
+        .total;
+    let duplicate = contract
+        .call_function("deploy_new_auction", json!({"name": "new-auction", "end_time": a_minute_from_now.to_string(), "auctioneer": auctioneer.account_id(), "ft_contract": ft_contract.account_id(), "nft_contract": nft_contract.account_id(), "token_id": "1", "starting_price": starting_price}))
+        .transaction()
+        .deposit(NearToken::from_millinear(200))
+        .gas(NearGas::from_tgas(300))
+        .with_signer(alice.account_id().clone(), signer.clone())
+        .send_to(&sandbox_network).await?;
+    let result: bool = duplicate.assert_success().json()?;
+    assert!(!result);
+    let after = alice
+        .tokens()
+        .near_balance()
+        .fetch_from(&sandbox_network)
+        .await?
+        .total;
+    assert!(before.saturating_sub(after) < NearToken::from_millinear(10));
+
+    // A missing global implementation must also fail atomically and refund.
+    let missing_factory = create_subaccount(&sandbox, "missing.sandbox")
+        .await?
+        .as_contract();
+    near_api::Contract::deploy(missing_factory.account_id().clone())
+        .use_code(std::fs::read(&contract_wasm_path)?)
+        .with_init_call("new", json!({"global_contract_id": "unpublished.sandbox"}))?
+        .with_signer(signer.clone())
+        .send_to(&sandbox_network)
+        .await?
+        .assert_success();
+    let before = alice
+        .tokens()
+        .near_balance()
+        .fetch_from(&sandbox_network)
+        .await?
+        .total;
+    let mut args = init_args.clone();
+    args["name"] = json!("unavailable");
+    // near-api 0.8's typed RPC error schema cannot decode
+    // GlobalContractDoesNotExist. Sign through near-api, then inspect this
+    // newer receipt error as raw JSON instead of weakening the assertion.
+    let prepared = missing_factory
+        .call_function("deploy_new_auction", args)
+        .transaction()
+        .deposit(NearToken::from_millinear(200))
+        .gas(NearGas::from_tgas(300))
+        .with_signer(alice.account_id().clone(), signer.clone())
+        .presign_with(&sandbox_network)
+        .await?;
+    let signed = prepared
+        .transaction
+        .signed()
+        .expect("Presigned transaction");
+    let outcome: serde_json::Value = reqwest::Client::new()
+        .post(sandbox.rpc_addr.to_string())
+        .json(
+            &json!({"jsonrpc": "2.0", "id": "missing-global", "method": "send_tx", "params": {
+                "signed_tx_base64": STANDARD.encode(near_sdk::borsh::to_vec(&signed)?),
+                "wait_until": "FINAL"
+            }}),
+        )
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+    assert_eq!(
+        outcome["result"]["status"]["SuccessValue"], "ZmFsc2U=",
+        "{outcome}"
+    );
+    assert!(outcome["result"]["receipts_outcome"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(
+            |receipt| receipt["outcome"]["status"]["Failure"]["ActionError"]["kind"]
+                ["GlobalContractDoesNotExist"]
+                .is_object()
+        ));
+
+    let after = alice
+        .tokens()
+        .near_balance()
+        .fetch_from(&sandbox_network)
+        .await?
+        .total;
+    assert!(before.saturating_sub(after) < NearToken::from_millinear(10));
+    assert!(near_api::Account("unavailable.missing.sandbox".parse()?)
+        .view()
+        .fetch_from(&sandbox_network)
+        .await
+        .is_err());
+
+    // Only direct, valid subaccount names are accepted.
+    for name in ["", "nested.auction", "INVALID", "-invalid"] {
+        contract.call_function("deploy_new_auction", json!({"name": name, "end_time": a_minute_from_now.to_string(), "auctioneer": auctioneer.account_id(), "ft_contract": ft_contract.account_id(), "nft_contract": nft_contract.account_id(), "token_id": "1", "starting_price": starting_price}))
+            .transaction().deposit(NearToken::from_near(1)).gas(NearGas::from_tgas(300))
+            .with_signer(alice.account_id().clone(), signer.clone())
+            .send_to(&sandbox_network).await?.assert_failure();
+    }
 
     Ok(())
 }
@@ -177,7 +338,7 @@ async fn create_subaccount(
     let account_id: AccountId = name.parse().unwrap();
     sandbox
         .create_account(account_id.clone())
-        .initial_balance(NearToken::from_near(10))
+        .initial_balance(NearToken::from_near(100))
         .send()
         .await?;
     Ok(near_api::Account(account_id))

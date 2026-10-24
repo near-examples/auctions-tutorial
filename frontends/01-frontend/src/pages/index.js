@@ -1,3 +1,4 @@
+import { parseUnits, formatUnits } from '@/utils/amounts.mjs';
 import styles from '@/styles/app.module.css';
 import Timer from '@/components/Timer';
 import Bid from '@/components/Bid';
@@ -9,13 +10,14 @@ import { AUCTION_CONTRACT } from '@/config';
 import LastBid from '@/components/LastBid';
 
 export default function Home() {
+  const [error, setError] = useState('');
   const [highestBid, setHighestBid] = useState(null)
   const [highestBidder, setHighestBidder] = useState(null)
   const [claimed, setClaimed] = useState(false)
   const [auctionEndTime, setAuctionEndTime] = useState(null)
   const [secondsRemaining, setSecondsRemaining] = useState(20)
   const [pastBids, setPastBids] = useState(null)
-  const nearMultiplier = Math.pow(10, 24)
+
 
   const { wallet } = useContext(NearContext);
 
@@ -25,7 +27,7 @@ export default function Home() {
         contractId: AUCTION_CONTRACT,
         method: "get_highest_bid",
       });
-      setHighestBid(highestBidData.bid / nearMultiplier)
+      setHighestBid(formatUnits(highestBidData.bid, 24))
       setHighestBidder(highestBidData.bidder)
 
       const claimedData = await wallet.viewMethod({
@@ -40,12 +42,12 @@ export default function Home() {
       });
       setAuctionEndTime(auctionEndTimeData)
     }
-    getInfo();
+    getInfo().catch((err) => setError(err.message));
 
     fetchPastBids();
 
     const intervalId = setInterval(() => {
-      getInfo();
+      getInfo().catch((err) => setError(err.message));
       setSecondsRemaining(20);
     }, 20000);
     
@@ -61,7 +63,7 @@ export default function Home() {
   }, []);
 
   const bid = async (amount) => {
-    let real_amount = amount * nearMultiplier
+    const real_amount = parseUnits(amount, 24)
     let response = await wallet.callMethod({
       contractId: AUCTION_CONTRACT,
       method: "bid",
@@ -69,6 +71,7 @@ export default function Home() {
       args: {},
       gas:"300000000000000"
     })
+    window.location.reload();
     return response
   }
 
@@ -78,18 +81,21 @@ export default function Home() {
       method: "claim",
       gas:"300000000000000"
     })
+    window.location.reload();
     return response
   }
 
   const fetchPastBids = async () => {
+    try {
       const response = await fetch(`/api/getBidHistory?contractId=${AUCTION_CONTRACT}`);
       const data = await response.json();
-      if (data.error) {
-        setPastBids(data.error);
-      } else {
-        setPastBids(data.pastBids);
-      }
-  }
+      setPastBids(data.error || data.pastBids);
+    } catch {
+      setPastBids('Bid history is unavailable');
+    }
+  };
+
+  if (error) return <main role="alert">Unable to load auction: {error}</main>;
 
   return (
     <main className={styles.main}>

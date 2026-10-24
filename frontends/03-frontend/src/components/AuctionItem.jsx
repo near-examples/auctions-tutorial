@@ -1,9 +1,10 @@
 import styles from './AuctionItem.module.css';
 
 const AuctionItem = ({ nftMetadata, validAuction }) => {
-  const cardImage = nftMetadata?.media 
-    ? `https://image-cache-service-z3w7d7dnea-ew.a.run.app/media?url=https://arweave.net/${nftMetadata.media}` 
-    : null;
+  const media = nftMetadata?.media;
+  const cardImage = !media ? null : media.startsWith('ipfs://')
+    ? `https://ipfs.io/ipfs/${media.slice(7)}`
+    : /^https?:\/\//.test(media) ? media : `https://arweave.net/${media}`;
 
   return (
     <div className={styles.container}>
@@ -13,10 +14,12 @@ const AuctionItem = ({ nftMetadata, validAuction }) => {
           <p>{nftMetadata?.description}</p>
         </div>
       <div className={styles.imageSection}>
+        {cardImage && (
         <img
           src={cardImage}
           alt="NFT"
-        ></img>
+        />
+        )}
       </div>
     </div>
   );
