@@ -25,7 +25,7 @@ Integration tests start a local `near-sandbox` node and use `near-api`; no testn
 The first run downloads Rust dependencies and the sandbox binary. NFT/FT WASM files under `tests/` are token fixtures.
 The factory tests build the auction from source and publish it globally inside the sandbox.
 
-Frontends require Node.js 22.12+ (Node.js 24 is used in CI). From either frontend directory, run `npm ci`, `npm test`, and `npm run dev`.
+Frontends require Node.js 22.22.2+ (Node.js 24 is used in CI). From either frontend directory, run `npm ci`, `npm test`, and `npm run dev`.
 They use `@hot-labs/near-connect` for wallet connections and `near-api-js` 7 for RPC calls.
 See each frontend README for contract, network, RPC, and optional bid-history configuration.
 
