@@ -5,7 +5,7 @@ Connect a wallet with `@hot-labs/near-connect`, read contracts with `near-api-js
 
 ## Run locally
 
-Use Node.js 22.12+ (CI uses Node.js 24):
+Use Node.js 22.22.2+ (CI uses Node.js 24):
 
 ```bash
 cp .env.example .env.local
